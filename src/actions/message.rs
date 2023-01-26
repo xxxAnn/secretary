@@ -40,5 +40,10 @@ pub async fn create(
     println!("{:?}", ctx.data().lock().unwrap().v);
     
     create_vote(&ctx, format!("Send message \"{}\" to the <#{}> channel", &message, &channel.id.0),
-    VoteAction::MessageCreate( MessageCreateAction { text: message.clone(), channel_id: channel.id.0, votes: 0, already_voted: vec![], finished: false})).await
+    VoteAction::MessageCreate( MessageCreateAction { 
+        text: message.clone(),
+        channel_id: channel.id.0,
+        votes: 0,
+        already_voted: vec![],
+        finished: false})).await
 }
