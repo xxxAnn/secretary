@@ -6,6 +6,7 @@ macro_rules! unwrap {
     ($value:expr, $pattern:pat => $result:expr) => {
         match $value {
             VoteAction::MessageCreate($pattern) => $result,
+            VoteAction::MessageDelete($pattern) => $result,
         }
     };
 }
@@ -13,6 +14,7 @@ macro_rules! unwrap {
 #[derive(Debug)]
 pub enum VoteAction {
     MessageCreate(MessageCreateAction),
+    MessageDelete(MessageDeleteAction)
 }
 
 impl VoteAction {
@@ -20,7 +22,7 @@ impl VoteAction {
         unwrap!(self, ref mut m => m.handle(p))
     }
     pub fn dummy(&self) -> Self {
-        unwrap!(self, m => VoteAction::MessageCreate(m.clone()))
+        unwrap!(self, m => m.clone().action())
     }
     pub async fn call(self, http: impl AsRef<poise::serenity_prelude::Http>) {
         unwrap!(self, m => m.call(http).await);
@@ -30,6 +32,9 @@ impl VoteAction {
     }
     pub fn set_finished(&mut self) {
         unwrap!(self, ref mut m => m.finished = true)
+    }
+    pub fn set_ogmsg(&mut self, ogmsg: u64) {
+        unwrap!(self, ref mut m => m.ogmsg = ogmsg)
     }
     pub fn already_voted(&mut self, r: u64, vote: bool) -> i16 {
         let already_voted;

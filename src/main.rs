@@ -41,10 +41,10 @@ impl EventHandler for Handler {
             debug!("Received component interaction {:?}.", component);
             let mut p: i16 = 0;
             let r = component.user.id.0;
-            info!("Checking if vote {} is finished.", &index);
+            debug!("Checking if vote {} is finished.", &index);
             // here we check if the vote is marked as finished
             if !self.d.lock().unwrap().v[index].is_finished() {
-                info!("Vote wasn't finished. Calculating appropriate value to add to the vote.");
+                debug!("Vote wasn't finished. Calculating appropriate value to add to the vote.");
                 // adds 1 if the vote marker is "Y" otherwise removes 1. this is the better
                 // way to do it since accidentally voting against a proposition 
                 // is less problematic than accidentally voting for, which
@@ -54,24 +54,24 @@ impl EventHandler for Handler {
                 // hence not doing anything. if the user already voted in the opposite way it returns
                 // 2 hence cancelling their previous vote. it returns 1 if the user hasn't previously voted.
                 p *= self.d.lock().unwrap().v[index].already_voted(r, t[0] == "Y");
-                info!("Adding {} to the vote.", p);
-                info!("Calculating and incrementing the vote tally.");
+                debug!("Adding {} to the vote.", p);
+                debug!("Calculating and incrementing the vote tally.");
                 // calculates the number of vote after p is added to it
                 let tally = self.d.lock().unwrap().v[index].handle_tally(p);
-                info!("Tally is now {}", tally);
-                info!("Verifying if tally attained required number of votes ({}).", consts::NUMBER_REQUIRED);
+                debug!("Tally is now {}", tally);
+                debug!("Verifying if tally attained required number of votes ({}).", consts::NUMBER_REQUIRED);
                 if tally >= consts::NUMBER_REQUIRED {
-                    info!("Dummy Creating dummy to call and throw away.");
+                    debug!("Dummy Creating dummy to call and throw away.");
                     // creates a dummy, a clone of the VoteAction. this is so it can be thrown
                     // away with all its fields. the call function may need ownership of Self.
                     let dummy = self.d.lock().unwrap().v[index].dummy();
                     debug!("Created dummy VoteAction {:?}.", dummy);
-                    info!("Calling dummy.");
+                    debug!("Calling dummy.");
                     // calls the function with the ctx.
                     // this takes ownership of the dummy and drops it.
                     // this is very likely to make http calls to discord.
                     dummy.call(&ctx).await;
-                    info!("Setting vote as completed.");
+                    debug!("Setting vote as completed.");
                     // sets the actual VoteAction as finished.
                     self.d.lock().unwrap().v[index].set_finished();
                 }
@@ -106,23 +106,27 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn create_vote(ctx: &Context<'_>, proposal: String, va: VoteAction) -> Result<(), Error> {
+pub async fn create_vote(ctx: &Context<'_>, proposal: String, mut va: VoteAction) -> Result<(), Error> {
     let index = ctx.data().lock().unwrap().v.len();
     info!("Adding new vote action at index {}.", &index);
     debug!("{:?}", &va);
-    ctx.data().lock().unwrap().v.push(va);
 
     let vote_chann = serenity::ChannelId(consts::VOTE_CHANNEL);
     debug!("Created ChannelId: {}", vote_chann);
 
-    if let Err(e) = vote_chann.send_message(&ctx, |m| m
+    match vote_chann.send_message(&ctx, |m| m
         .embed(|e| e.title("Vote").description(format!("Proposal to {}.", proposal)).colour((200, 12, 12)))
         .components(|c| c
             .create_action_row(|r| r
                 .create_button(|byes| byes.label("Yes").style(serenity::ButtonStyle::Success).custom_id(format!("Y-{}", index)))
                 .create_button(|byes| byes.label("No").style(serenity::ButtonStyle::Danger).custom_id(format!("N-{}", index)))
             )
-    )).await { error!("Failed to send vote proposal. {:?}", e) }
+    )).await {
+        Ok(m) => va.set_ogmsg(m.id.0),
+        Err(e) => error!("Failed to send vote proposal. {:?}", e)
+    }
+
+    ctx.data().lock().unwrap().v.push(va);
 
     if let Err(e) = ctx.send(|f| f
         .content("Succesfully created proposal")
