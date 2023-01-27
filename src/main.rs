@@ -101,7 +101,7 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Arc<Mutex<Data>>, Error>;
 
 /// Displays your or another user's account creation date
-#[poise::command(slash_command, subcommands("message"))]
+#[poise::command(slash_command, subcommands("message", "role"))]
 async fn propose(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }

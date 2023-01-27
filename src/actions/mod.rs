@@ -1,6 +1,8 @@
 pub mod message;
+pub mod role;
 
 pub use message::*;
+pub use role::*;
 
 macro_rules! unwrap {
     ($value:expr, $pattern:pat => $result:expr) => {
