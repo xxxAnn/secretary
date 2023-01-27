@@ -9,7 +9,7 @@ mod actions;
 
 use actions::*;
 
-#[poise::command(slash_command, subcommands("message", "role"))]
+#[poise::command(slash_command, subcommands("message", "role", "user"))]
 async fn propose(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }

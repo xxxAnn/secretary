@@ -1,8 +1,10 @@
 pub mod message;
 pub mod role;
+pub mod user;
 
 pub use message::*;
 pub use role::*;
+pub use user::*;
 
 macro_rules! unwrap {
     ($value:expr, $pattern:pat => $result:expr) => {
@@ -11,6 +13,7 @@ macro_rules! unwrap {
             VoteAction::MessageDelete($pattern) => $result,
             VoteAction::RoleCreate($pattern) => $result,
             VoteAction::RoleDelete($pattern) => $result,
+            VoteAction::UserRoleAdd($pattern) => $result
         }
     };
 }
@@ -20,7 +23,8 @@ pub enum VoteAction {
     MessageCreate(MessageCreateAction),
     MessageDelete(MessageDeleteAction),
     RoleCreate(RoleCreateAction),
-    RoleDelete(RoleDeleteAction)
+    RoleDelete(RoleDeleteAction),
+    UserRoleAdd(UserRoleAddAction)
 }
 
 impl VoteAction {
