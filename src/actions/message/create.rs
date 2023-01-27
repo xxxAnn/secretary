@@ -22,13 +22,6 @@ impl MessageCreateAction {
     }
 }
 
-unsafe impl Send for MessageCreateAction {}
-
-#[poise::command(slash_command, subcommands("create"))]
-pub async fn message(_: Context<'_>) -> Result<(), Error> {
-    Ok(())
-}
-
 #[poise::command(slash_command)]
 pub async fn create(
     ctx: Context<'_>,
@@ -36,14 +29,18 @@ pub async fn create(
     channel: serenity::GuildChannel,
     #[description = "Message to send"]
     message: String) -> Result<(), Error> {
-    // Create message
-    println!("{:?}", ctx.data().lock().unwrap().v);
     
-    create_vote(&ctx, format!("Send message \"{}\" to the <#{}> channel", &message, &channel.id.0),
+    info!("Received command by user named {}#{} with user id {}.", ctx.author().name, ctx.author().discriminator, ctx.author().id.0);
+    debug!("Received channel object {:?}.", &channel);
+    debug!("Received context object {:?}.", &ctx);
+    create_vote(
+        &ctx, 
+        format!("Send message \"{}\" to the <#{}> channel", &message, &channel.id.0),
     VoteAction::MessageCreate( MessageCreateAction { 
         text: message.clone(),
         channel_id: channel.id.0,
         votes: 0,
         already_voted: vec![],
-        finished: false})).await
+        finished: false})
+    ).await
 }
