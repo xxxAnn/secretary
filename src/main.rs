@@ -9,6 +9,12 @@ mod actions;
 
 use actions::*;
 
+#[poise::command(slash_command, subcommands("message", "role"))]
+async fn propose(_: Context<'_>) -> Result<(), Error> {
+    Ok(())
+}
+
+
 #[derive(Debug)]
 struct Handler {
     d: Arc<Mutex<Data>>
@@ -99,12 +105,6 @@ pub struct Data {
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Arc<Mutex<Data>>, Error>;
-
-/// Displays your or another user's account creation date
-#[poise::command(slash_command, subcommands("message", "role"))]
-async fn propose(_: Context<'_>) -> Result<(), Error> {
-    Ok(())
-}
 
 pub async fn create_vote(ctx: &Context<'_>, proposal: String, mut va: VoteAction) -> Result<(), Error> {
     let index = ctx.data().lock().unwrap().v.len();
