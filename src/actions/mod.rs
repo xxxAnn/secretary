@@ -9,6 +9,8 @@ macro_rules! unwrap {
         match $value {
             VoteAction::MessageCreate($pattern) => $result,
             VoteAction::MessageDelete($pattern) => $result,
+            VoteAction::RoleCreate($pattern) => $result,
+            VoteAction::RoleDelete($pattern) => $result,
         }
     };
 }
@@ -16,7 +18,9 @@ macro_rules! unwrap {
 #[derive(Debug)]
 pub enum VoteAction {
     MessageCreate(MessageCreateAction),
-    MessageDelete(MessageDeleteAction)
+    MessageDelete(MessageDeleteAction),
+    RoleCreate(RoleCreateAction),
+    RoleDelete(RoleDeleteAction)
 }
 
 impl VoteAction {
