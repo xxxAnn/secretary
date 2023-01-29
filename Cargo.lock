@@ -1073,6 +1073,7 @@ dependencies = [
  "env_logger",
  "log",
  "poise",
+ "rand",
  "tokio",
 ]
 

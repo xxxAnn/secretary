@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use std::{sync::{Mutex, Arc}, io::Write, io::prelude::*};
+use std::{sync::{Mutex, Arc}, io::Write};
 
 use poise::{serenity_prelude::{self as serenity, EventHandler, Http}, async_trait};
 
@@ -25,6 +25,7 @@ mod consts;
 mod actions;
 
 use actions::*;
+use rand::Rng;
 
 #[poise::command(slash_command, subcommands("message", "role", "user", "channel"))]
 async fn propose(_: Context<'_>) -> Result<(), Error> {
@@ -34,7 +35,7 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 async fn sync(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.data().lock().unwrap().nrq = (ctx.guild().unwrap().members(&ctx, None, None).await.unwrap().iter().filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908))).collect::<Vec<&serenity::Member>>().len() as f32 / 1f32).ceil() as i16;
+    ctx.data().lock().unwrap().nrq = (ctx.guild().unwrap().members(&ctx, None, None).await.unwrap().iter().filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908))).collect::<Vec<&serenity::Member>>().len() as f32 / 2f32).ceil() as i16;
     if let Err(e) = ctx.say(format!("Synced. The number of votes required is now {}.", ctx.data().lock().unwrap().nrq)).await {
         error!("Error responding to sync. {:?}", e);
     }
@@ -47,10 +48,9 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
     if ctx.author().id == 331431342438875137 {
         let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
         serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
-            .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("_ _
-            End of Session number {} ({}). Session lasted {} day(s) {} hour(s) {} minute(s) and {} second(s)", consts::SESSION_NUMBER, 
+            .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("End of Session. Session started at {} and lasted {} hour(s)", 
             ctx.data().lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"),
-        k.num_days(), k.num_hours(), k.num_minutes(), k.num_seconds())))).await.unwrap();
+        k.num_hours())).color(ctx.data().lock().unwrap().color))).await.unwrap();
         if let Err(e) = ctx.send(|r| r.content(format!("Succesfully ended session. Shutting down bot.")).ephemeral(true)).await {
             error!("Error responding to end of session declaration. {:?}", &e);
             Err(Box::new(e))
@@ -84,7 +84,7 @@ impl EventHandler for Handler {
         serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
             .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("The Secretary restarted. Hence, all prior votes were rendered invalid.
             
-            Beginning of Session number {}. ({})", consts::SESSION_NUMBER, self.d.lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"))))).await.unwrap();
+            _ _    Beginning of Session. ({})", self.d.lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"))).color(self.d.lock().unwrap().color))).await.unwrap();
     }
     async fn interaction_create(&self, ctx: serenity::Context, interaction: serenity::Interaction) {
         if let serenity::Interaction::MessageComponent(component) = interaction {
@@ -167,7 +167,8 @@ impl EventHandler for Handler {
 pub struct Data {
     v: Vec<VoteAction>,
     nrq: i16,
-    started: chrono::DateTime<chrono::Utc>
+    started: chrono::DateTime<chrono::Utc>,
+    color: (u8, u8, u8)
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Arc<Mutex<Data>>, Error>;
@@ -181,7 +182,7 @@ pub async fn create_vote(ctx: &Context<'_>, proposal: String, mut va: VoteAction
     debug!("Created ChannelId: {}", vote_chann);
 
     match vote_chann.send_message(&ctx, |m| m
-        .embed(|e| e.title("Vote").description(format!("Proposal to {}.", proposal)).colour((200, 12, 12)))
+        .embed(|e| e.title("Vote").description(format!("Proposal to {}.", proposal)).color(ctx.data().lock().unwrap().color))
         .components(|c| c
             .create_action_row(|r| r
                 .create_button(|byes| byes.label("Yes").style(serenity::ButtonStyle::Success).custom_id(format!("Y-{}", index)))
@@ -205,6 +206,7 @@ pub async fn create_vote(ctx: &Context<'_>, proposal: String, mut va: VoteAction
 
 #[tokio::main]
 async fn main() {
+    let mut rng = rand::thread_rng();
     env_logger::Builder::new()
     .format(|buf, record| {
         writeln!(buf,
@@ -220,7 +222,8 @@ async fn main() {
     let data = Arc::new(Mutex::new( Data {
         v: vec![],
         nrq: consts::DEFAULT_NRQ,
-        started: chrono::Utc::now()
+        started: chrono::Utc::now(),
+        color: (rng.gen_range(0..=255), rng.gen_range(0..=255), rng.gen_range(0..=255))
     }));
     info!("Building framework");
     let data2 = data.clone();
