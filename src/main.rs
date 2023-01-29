@@ -47,10 +47,10 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
     if ctx.author().id == 331431342438875137 {
         let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
         serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
-            .content(format!("_ _
+            .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("_ _
             End of Session number {} ({}). Session lasted {} day(s) {} hour(s) {} minute(s) and {} second(s)", consts::SESSION_NUMBER, 
             ctx.data().lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"),
-        k.num_days(), k.num_hours(), k.num_minutes(), k.num_seconds()))).await.unwrap();
+        k.num_days(), k.num_hours(), k.num_minutes(), k.num_seconds())))).await.unwrap();
         if let Err(e) = ctx.send(|r| r.content(format!("Succesfully ended session. Shutting down bot.")).ephemeral(true)).await {
             error!("Error responding to end of session declaration. {:?}", &e);
             Err(Box::new(e))
@@ -82,9 +82,9 @@ struct Handler {
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
         serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
-            .content(format!("The Secretary restarted. Hence, all prior votes were rendered invalid.
+            .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("The Secretary restarted. Hence, all prior votes were rendered invalid.
             
-            Beginning of Session number {}. ({})", consts::SESSION_NUMBER, self.d.lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"),))).await.unwrap();
+            Beginning of Session number {}. ({})", consts::SESSION_NUMBER, self.d.lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"))))).await.unwrap();
     }
     async fn interaction_create(&self, ctx: serenity::Context, interaction: serenity::Interaction) {
         if let serenity::Interaction::MessageComponent(component) = interaction {
