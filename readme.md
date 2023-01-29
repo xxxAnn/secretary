@@ -1,0 +1,1 @@
+A bot to run The "Commune" server through a system of direct democracy.
