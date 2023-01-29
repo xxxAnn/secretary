@@ -73,7 +73,7 @@ pub async fn can_view_send(
     } else {
         create_vote(
             &ctx, 
-            format!("Allows role <@&{}> to view and speak in <#{}>", &role.id.0, &channel.id.0),
+            format!("Allow role <@&{}> to view and speak in <#{}>", &role.id.0, &channel.id.0),
         VoteAction::CanViewSend( CanViewSend { 
             channel_id: channel.id.0,
             role_id: role.id.0,
