@@ -32,9 +32,18 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
 }
 
 
+#[poise::command(slash_command)]
+async fn sync(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.data().lock().unwrap().nrq = (ctx.guild().unwrap().members(&ctx, None, None).await.unwrap().iter().filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908))).collect::<Vec<&serenity::Member>>().len() as f32 / 1f32).ceil() as i16;
+    if let Err(e) = ctx.say(format!("Synced. The number of votes required is now {}.", ctx.data().lock().unwrap().nrq)).await {
+        error!("Error respond to sync. {:?}", e);
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Handler {
-    d: Arc<Mutex<Data>>
+    d: Arc<Mutex<Data>>,
 }
 
 #[async_trait]
@@ -86,8 +95,8 @@ impl EventHandler for Handler {
                 // calculates the number of vote after p is added to it
                 let tally = self.d.lock().unwrap().v[index].handle_tally(p);
                 debug!("Tally is now {}", tally);
-                debug!("Verifying if tally attained required number of votes ({}).", consts::NUMBER_REQUIRED);
-                if tally >= consts::NUMBER_REQUIRED {
+                debug!("Verifying if tally attained required number of votes ({}).", self.d.lock().unwrap().nrq);
+                if tally >= self.d.lock().unwrap().nrq {
                     debug!("Dummy Creating dummy to call and throw away.");
                     // creates a dummy, a clone of the VoteAction. this is so it can be thrown
                     // away with all its fields. the call function may need ownership of Self.
@@ -104,7 +113,7 @@ impl EventHandler for Handler {
                 }
                 if let Err(e) = component.create_interaction_response(&ctx, |resp| resp
                     .interaction_response_data(|dat| dat
-                        .content(format!("Succesfully voted. {}/{}", tally, consts::NUMBER_REQUIRED))
+                        .content(format!("Succesfully voted. {}/{}", tally, self.d.lock().unwrap().nrq))
                         .ephemeral(true)
                     )
                 ).await { error!("Failed to reply to interaction. {:?}", e) }
@@ -122,7 +131,8 @@ impl EventHandler for Handler {
 
 #[derive(Debug)]
 pub struct Data {
-    v: Vec<VoteAction>
+    v: Vec<VoteAction>,
+    nrq: i16,
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Arc<Mutex<Data>>, Error>;
@@ -173,13 +183,14 @@ async fn main() {
     .init();
 
     let data = Arc::new(Mutex::new( Data {
-        v: vec![]
+        v: vec![],
+        nrq: 0
     }));
     info!("Building framework");
     let data2 = data.clone();
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![propose()],
+            commands: vec![propose(), sync()],
             ..Default::default()
         })
         .client_settings(|c| c.event_handler(Handler {
