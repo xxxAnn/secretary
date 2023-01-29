@@ -57,14 +57,19 @@ pub async fn role_delete(
 ) -> Result<(), Error> {    
     info!("Received command by user named {}#{} with user id {}.", ctx.author().name, ctx.author().discriminator, ctx.author().id.0);
     debug!("Received context object {:?}.", &ctx);
-    create_vote(
-        &ctx, 
-        format!("Delete role <@&{}>", &role.id.0),
-    VoteAction::RoleDelete( RoleDelete { 
-        role_id: role.id.0,
-        votes: 0,
-        ogmsg: 0,
-        already_voted: vec![],
-        finished: false})
-    ).await
+    if vec![1069130087116578908].contains(&role.id.0) {
+        let _ = ctx.send(|m| m.content("You cannot delete this role.").ephemeral(true)).await;
+        Ok(())
+    } else {
+        create_vote(
+            &ctx, 
+            format!("Delete role <@&{}>", &role.id.0),
+        VoteAction::RoleDelete( RoleDelete { 
+            role_id: role.id.0,
+            votes: 0,
+            ogmsg: 0,
+            already_voted: vec![],
+            finished: false})
+        ).await
+    }
 }

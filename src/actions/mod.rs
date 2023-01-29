@@ -56,7 +56,8 @@ generate_vote_actions!(
     VoiceChannelCreate, 
     ChannelDelete,
     UserRoleRemove,
-    CategoryChannelCreate
+    CategoryChannelCreate,
+    ChannelPurge
 );
 
 /* 

@@ -57,14 +57,20 @@ pub async fn channel_delete(
 ) -> Result<(), Error> {    
     info!("Received command by user named {}#{} with user id {}.", ctx.author().name, ctx.author().discriminator, ctx.author().id.0);
     debug!("Received context object {:?}.", &ctx);
-    create_vote(
-        &ctx, 
-        format!("Delete the <#{}> channel.", &channel.id.0),
-    VoteAction::ChannelDelete( ChannelDelete { 
-        channel_id: channel.id.0,
-        votes: 0,
-        ogmsg: 0,
-        already_voted: vec![],
-        finished: false})
-    ).await
+    if vec![969016622402650112, 970108683746951178].contains(&channel.id.0) {
+        let _ = ctx.send(|m| m.content("You cannot delete these channels.").ephemeral(true)).await;
+        Ok(())
+    } else {
+        create_vote(
+            &ctx, 
+            format!("Delete the <#{}> channel.", &channel.id.0),
+        VoteAction::ChannelDelete( ChannelDelete { 
+            channel_id: channel.id.0,
+            votes: 0,
+            ogmsg: 0,
+            already_voted: vec![],
+            finished: false})
+        ).await
+    }
+    
 }
