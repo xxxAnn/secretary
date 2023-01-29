@@ -35,7 +35,7 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 async fn sync(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.data().lock().unwrap().nrq = (ctx.guild().unwrap().members(&ctx, None, None).await.unwrap().iter().filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908))).collect::<Vec<&serenity::Member>>().len() as f32 / 2f32).ceil() as i16;
+    ctx.data().lock().unwrap().nrq = (ctx.guild().unwrap().members(&ctx, None, None).await.unwrap().iter().filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908))).collect::<Vec<&serenity::Member>>().len() as f32 / 3f32).ceil() as i16;
     if let Err(e) = ctx.say(format!("Synced. The number of votes required is now {}.", ctx.data().lock().unwrap().nrq)).await {
         error!("Error responding to sync. {:?}", e);
     }
