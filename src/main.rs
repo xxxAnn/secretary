@@ -9,7 +9,7 @@ mod actions;
 
 use actions::*;
 
-#[poise::command(slash_command, subcommands("message", "role", "user"))]
+#[poise::command(slash_command, subcommands("message", "role", "user", "channel"))]
 async fn propose(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
@@ -22,6 +22,10 @@ struct Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
+        serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
+            .content("The Secretary restarted. Hence, all prior votes were rendered invalid.")).await.unwrap();
+    }
     async fn interaction_create(&self, ctx: serenity::Context, interaction: serenity::Interaction) {
         if let serenity::Interaction::MessageComponent(component) = interaction {
             // the custom_id is set as Y-{index} or N-{index},
