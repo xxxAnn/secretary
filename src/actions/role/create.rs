@@ -1,7 +1,7 @@
 use crate::*;
 
 #[derive(Debug, Clone)]
-pub struct RoleCreateAction {
+pub struct RoleCreate {
     colour: u64,
     name: String,
     position: u8,
@@ -11,7 +11,7 @@ pub struct RoleCreateAction {
     pub finished: bool
 }
 
-impl RoleCreateAction {
+impl RoleCreate {
     pub fn handle(&mut self, p: i16) -> i16 {
         self.votes += p;
         
@@ -57,7 +57,7 @@ pub async fn role_create(
     create_vote(
         &ctx, 
         format!("Create role called {}", &name),
-    VoteAction::RoleCreate( RoleCreateAction { 
+    VoteAction::RoleCreate( RoleCreate { 
         name,
         colour: serenity::Colour::from_rgb(r, g, b).0 as u64,
         position,

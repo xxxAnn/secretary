@@ -1,31 +1,59 @@
 pub mod message;
 pub mod role;
 pub mod user;
+pub mod channel;
 
 pub use message::*;
 pub use role::*;
 pub use user::*;
+pub use channel::*;
 
-macro_rules! unwrap {
-    ($value:expr, $pattern:pat => $result:expr) => {
-        match $value {
-            VoteAction::MessageCreate($pattern) => $result,
-            VoteAction::MessageDelete($pattern) => $result,
-            VoteAction::RoleCreate($pattern) => $result,
-            VoteAction::RoleDelete($pattern) => $result,
-            VoteAction::UserRoleAdd($pattern) => $result
+
+macro_rules! generate_vote_actions {
+    ($($x:ident),+) => {
+        #[derive(Debug)]
+        pub enum VoteAction {
+            $($x($x)),+
         }
-    };
+
+        macro_rules! unwrap {
+            ($value:expr, $pattern:pat => $result:expr) => {
+                match $value {
+                    $(VoteAction::$x($pattern) => $result,)+
+                }
+            };
+        }
+    }
 }
 
+generate_vote_actions!(
+    MessageCreate, 
+    MessageDelete, 
+    RoleCreate, 
+    RoleDelete, 
+    UserRoleAdd, 
+    CantSend, 
+    CantView, 
+    CanViewSend, 
+    TextChannelCreate, 
+    VoiceChannelCreate, 
+    ChannelDelete,
+    UserRoleRemove,
+    CategoryChannelCreate
+);
+
+/* 
 #[derive(Debug)]
 pub enum VoteAction {
     MessageCreate(MessageCreateAction),
     MessageDelete(MessageDeleteAction),
     RoleCreate(RoleCreateAction),
     RoleDelete(RoleDeleteAction),
-    UserRoleAdd(UserRoleAddAction)
+    UserRoleAdd(UserRoleAddAction),
 }
+*/
+
+
 
 impl VoteAction {
     pub fn handle_tally(&mut self, p: i16) -> i16 {

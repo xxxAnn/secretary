@@ -1,7 +1,7 @@
 use crate::*;
 
 #[derive(Debug, Clone)]
-pub struct MessageCreateAction {
+pub struct MessageCreate {
     text: String,
     channel_id: u64,
     votes: i16,
@@ -10,7 +10,7 @@ pub struct MessageCreateAction {
     pub finished: bool
 }
 
-impl MessageCreateAction {
+impl MessageCreate {
     pub fn handle(&mut self, p: i16) -> i16 {
         self.votes += p;
         
@@ -49,7 +49,7 @@ pub async fn create(
     create_vote(
         &ctx, 
         format!("Send message \"{}\" to the <#{}> channel", &message, &channel.id.0),
-    VoteAction::MessageCreate( MessageCreateAction { 
+    VoteAction::MessageCreate( MessageCreate { 
         text: message.clone(),
         channel_id: channel.id.0,
         ogmsg: 0,

@@ -1,7 +1,7 @@
 use crate::*;
 
 #[derive(Debug, Clone)]
-pub struct RoleDeleteAction {
+pub struct RoleDelete {
     role_id: u64,
     votes: i16,
     pub ogmsg: u64,
@@ -9,7 +9,7 @@ pub struct RoleDeleteAction {
     pub finished: bool
 }
 
-impl RoleDeleteAction {
+impl RoleDelete {
     pub fn handle(&mut self, p: i16) -> i16 {
         self.votes += p;
         
@@ -42,8 +42,8 @@ pub async fn role_delete(
     debug!("Received context object {:?}.", &ctx);
     create_vote(
         &ctx, 
-        format!("Delete role <@&{}>", &role.id),
-    VoteAction::RoleDelete( RoleDeleteAction { 
+        format!("Delete role <@&{}>", &role.id.0),
+    VoteAction::RoleDelete( RoleDelete { 
         role_id: role.id.0,
         votes: 0,
         ogmsg: 0,

@@ -1,7 +1,7 @@
 use crate::*;
 
 #[derive(Debug, Clone)]
-pub struct MessageDeleteAction {
+pub struct MessageDelete {
     channel_id: u64,
     message_id: u64,
     votes: i16,
@@ -10,7 +10,7 @@ pub struct MessageDeleteAction {
     pub finished: bool
 }
 
-impl MessageDeleteAction {
+impl MessageDelete {
     pub fn handle(&mut self, p: i16) -> i16 {
         self.votes += p;
         
@@ -58,7 +58,7 @@ pub async fn delete(
     create_vote(
         &ctx, 
         format!("Delete this message https://discord.com/channels/{}/{}/{}", &channel.guild_id.0, &channel.id.0, &message_id),
-    VoteAction::MessageDelete( MessageDeleteAction { 
+    VoteAction::MessageDelete( MessageDelete { 
         message_id: parsed_id,
         channel_id: channel.id.0,
         ogmsg: 0,
