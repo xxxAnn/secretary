@@ -48,7 +48,8 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
     if ctx.author().id == 331431342438875137 {
         let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
         serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
-            .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("End of Session. Session started at {} and lasted {} hour(s)", 
+            .embed(|e| e.title(format!("Session {}", consts::SESSION_NUMBER)).description(format!("End of Session. 
+            Session started at {} and lasted {} hour(s).", 
             ctx.data().lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"),
         k.num_hours())).color(ctx.data().lock().unwrap().color))).await.unwrap();
         if let Err(e) = ctx.send(|r| r.content(format!("Succesfully ended session. Shutting down bot.")).ephemeral(true)).await {
