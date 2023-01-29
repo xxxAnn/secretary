@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use std::{sync::{Mutex, Arc}, io::Write};
+use std::{sync::{Mutex, Arc}, io::Write, io::prelude::*};
 
 use poise::{serenity_prelude::{self as serenity, EventHandler, Http}, async_trait};
 
@@ -36,10 +36,42 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
 async fn sync(ctx: Context<'_>) -> Result<(), Error> {
     ctx.data().lock().unwrap().nrq = (ctx.guild().unwrap().members(&ctx, None, None).await.unwrap().iter().filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908))).collect::<Vec<&serenity::Member>>().len() as f32 / 1f32).ceil() as i16;
     if let Err(e) = ctx.say(format!("Synced. The number of votes required is now {}.", ctx.data().lock().unwrap().nrq)).await {
-        error!("Error respond to sync. {:?}", e);
+        error!("Error responding to sync. {:?}", e);
     }
     Ok(())
 }
+
+
+#[poise::command(slash_command)]
+async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
+    if ctx.author().id == 331431342438875137 {
+        let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
+        serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
+            .content(format!("_ _
+            End of Session number {} ({}). Session lasted {} day(s) {} hour(s) {} minute(s) and {} second(s)", consts::SESSION_NUMBER, 
+            ctx.data().lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"),
+        k.num_days(), k.num_hours(), k.num_minutes(), k.num_seconds()))).await.unwrap();
+        if let Err(e) = ctx.send(|r| r.content(format!("Succesfully ended session. Shutting down bot.")).ephemeral(true)).await {
+            error!("Error responding to end of session declaration. {:?}", &e);
+            Err(Box::new(e))
+        } else {
+            let contents = std::fs::read_to_string("src/consts.rs").unwrap();
+
+            std::fs::write("src/consts.rs", contents.replace(&format!("pub const SESSION_NUMBER: u16 = {};", consts::SESSION_NUMBER), &format!("pub const SESSION_NUMBER: u16 = {};", consts::SESSION_NUMBER+1))).unwrap();
+
+            std::process::abort();
+        }
+    } else {
+        if let Err(e) = ctx.send(|r| r.content(format!("You are not allowed to declare the end of a session.")).ephemeral(true)).await {
+            error!("Error responding to end of session declaration. {:?}", &e);
+            Err(Box::new(e))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+
 
 #[derive(Debug)]
 struct Handler {
@@ -50,7 +82,9 @@ struct Handler {
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
         serenity::ChannelId(consts::VOTE_CHANNEL).send_message(&ctx, |msg| msg
-            .content("The Secretary restarted. Hence, all prior votes were rendered invalid.")).await.unwrap();
+            .content(format!("The Secretary restarted. Hence, all prior votes were rendered invalid.
+            
+            Beginning of Session number {}. ({})", consts::SESSION_NUMBER, self.d.lock().unwrap().started.format("%Y-%m-%d %H:%M:%S UTC+0"),))).await.unwrap();
     }
     async fn interaction_create(&self, ctx: serenity::Context, interaction: serenity::Interaction) {
         if let serenity::Interaction::MessageComponent(component) = interaction {
@@ -133,6 +167,7 @@ impl EventHandler for Handler {
 pub struct Data {
     v: Vec<VoteAction>,
     nrq: i16,
+    started: chrono::DateTime<chrono::Utc>
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Arc<Mutex<Data>>, Error>;
@@ -174,7 +209,7 @@ async fn main() {
     .format(|buf, record| {
         writeln!(buf,
             "{} [{}] - {}",
-            chrono::Local::now().format("%Y-%m-%dT%H:%M:%S"),
+            chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S"),
             record.level(),
             record.args()
         )
@@ -184,17 +219,18 @@ async fn main() {
 
     let data = Arc::new(Mutex::new( Data {
         v: vec![],
-        nrq: 0
+        nrq: consts::DEFAULT_NRQ,
+        started: chrono::Utc::now()
     }));
     info!("Building framework");
     let data2 = data.clone();
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![propose(), sync()],
+            commands: vec![propose(), sync(), declare_session_end()],
             ..Default::default()
         })
         .client_settings(|c| c.event_handler(Handler {
-            d: data
+            d: data,
         }))
         .token(std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN"))
         .intents(serenity::GatewayIntents::non_privileged())
