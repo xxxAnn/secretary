@@ -1,0 +1,4 @@
+- EditRole (actions/role/edit : propose role edit)
+- Moderator Role (only functional when the bot is not in session.)
+- ViewRoles (main)
+- ViewChannelPermissions (main)
