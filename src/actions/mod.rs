@@ -15,16 +15,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+pub mod channel;
 pub mod message;
 pub mod role;
 pub mod user;
-pub mod channel;
 
+pub use channel::*;
 pub use message::*;
 pub use role::*;
 pub use user::*;
-pub use channel::*;
-
 
 macro_rules! generate_vote_actions {
     ($($x:ident),+) => {
@@ -44,23 +43,23 @@ macro_rules! generate_vote_actions {
 }
 
 generate_vote_actions!(
-    MessageCreate, 
-    MessageDelete, 
-    RoleCreate, 
-    RoleDelete, 
-    UserRoleAdd, 
-    CantSend, 
-    CantView, 
-    CanViewSend, 
-    TextChannelCreate, 
-    VoiceChannelCreate, 
+    MessageCreate,
+    MessageDelete,
+    RoleCreate,
+    RoleDelete,
+    UserRoleAdd,
+    CantSend,
+    CantView,
+    CanViewSend,
+    TextChannelCreate,
+    VoiceChannelCreate,
     ChannelDelete,
     UserRoleRemove,
     CategoryChannelCreate,
     ChannelPurge
 );
 
-/* 
+/*
 #[derive(Debug)]
 pub enum VoteAction {
     MessageCreate(MessageCreateAction),
@@ -70,8 +69,6 @@ pub enum VoteAction {
     UserRoleAdd(UserRoleAddAction),
 }
 */
-
-
 
 impl VoteAction {
     pub fn handle_tally(&mut self, p: i16) -> i16 {
@@ -87,17 +84,19 @@ impl VoteAction {
         unwrap!(self, m => m.finished)
     }
     pub fn set_finished(&mut self) {
-        unwrap!(self, ref mut m => m.finished = true)
+        unwrap!(self, ref mut m => m.finished = true);
     }
     pub fn set_ogmsg(&mut self, ogmsg: u64) {
-        unwrap!(self, ref mut m => m.ogmsg = ogmsg)
+        unwrap!(self, ref mut m => m.ogmsg = ogmsg);
     }
     pub fn already_voted(&mut self, r: u64, vote: bool) -> i16 {
         let already_voted;
         unwrap!(self, ref mut m => already_voted = &mut m.already_voted);
         let mut factor = 1;
         let k = already_voted.contains(&(r, vote));
-        if k { return 0 }
+        if k {
+            return 0;
+        }
 
         if let Some(index) = already_voted.iter().position(|x| x == &(r, !vote)) {
             already_voted.remove(index);

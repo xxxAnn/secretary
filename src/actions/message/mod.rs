@@ -27,4 +27,3 @@ use crate::{Context, Error};
 pub async fn message(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
-

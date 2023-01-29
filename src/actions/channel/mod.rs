@@ -15,22 +15,30 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+mod categorycreate;
+mod delete;
+mod purge;
 mod textcreate;
 mod voicecreate;
-mod delete;
-mod categorycreate;
-mod purge;
 
-pub use textcreate::*;
-pub use delete::*;
-pub use voicecreate::*;
 pub use categorycreate::*;
+pub use delete::*;
 pub use purge::*;
+pub use textcreate::*;
+pub use voicecreate::*;
 
 use crate::{Context, Error};
 
-#[poise::command(slash_command, subcommands("create_text", "create_voice", "channel_delete", "create_category", "channel_purge"))]
+#[poise::command(
+    slash_command,
+    subcommands(
+        "create_text",
+        "create_voice",
+        "channel_delete",
+        "create_category",
+        "channel_purge"
+    )
+)]
 pub async fn channel(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
-

@@ -15,22 +15,30 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-pub mod create;
-pub mod delete;
+pub mod can_view_send;
 pub mod cant_send;
 pub mod cant_view;
-pub mod can_view_send;
+pub mod create;
+pub mod delete;
 
-pub use create::*;
-pub use delete::*;
+pub use can_view_send::*;
 pub use cant_send::*;
 pub use cant_view::*;
-pub use can_view_send::*;
+pub use create::*;
+pub use delete::*;
 
 use crate::{Context, Error};
 
-#[poise::command(slash_command, subcommands("role_create", "role_delete", "can_view_send", "cant_send", "cant_view"))]
+#[poise::command(
+    slash_command,
+    subcommands(
+        "role_create",
+        "role_delete",
+        "can_view_send",
+        "cant_send",
+        "cant_view"
+    )
+)]
 pub async fn role(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
-
