@@ -90,8 +90,7 @@ impl VoteAction {
         unwrap!(self, ref mut m => m.ogmsg = ogmsg);
     }
     pub fn already_voted(&mut self, r: u64, vote: bool) -> i16 {
-        let already_voted;
-        unwrap!(self, ref mut m => already_voted = &mut m.already_voted);
+        let already_voted = unwrap!(self, ref mut m => &mut m.already_voted);
         let mut factor = 1;
         let k = already_voted.contains(&(r, vote));
         if k {

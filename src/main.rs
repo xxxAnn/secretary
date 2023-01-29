@@ -30,7 +30,7 @@ use log::{debug, error, info};
 mod actions;
 mod consts;
 
-use actions::*;
+use actions::{channel, message, role, user, VoteAction};
 use rand::Rng;
 
 #[poise::command(slash_command, subcommands("message", "role", "user", "channel"))]
@@ -47,7 +47,10 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
         .await
         .unwrap()
         .iter()
-        .filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908)))
+        .filter(|m| {
+            m.roles
+                .contains(&serenity::RoleId(1_069_130_087_116_578_908))
+        })
         .collect::<Vec<&serenity::Member>>()
         .len() as f32
         / 3f32)
@@ -66,7 +69,7 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
-    if ctx.author().id == 331431342438875137 {
+    if ctx.author().id == 331_431_342_438_875_137 {
         let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
         let l = ctx.data().lock().unwrap().v.len();
         serenity::ChannelId(consts::VOTE_CHANNEL)
@@ -92,7 +95,7 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
             .unwrap();
         if let Err(e) = ctx
             .send(|r| {
-                r.content(format!("Succesfully ended session. Shutting down bot."))
+                r.content("Succesfully ended session. Shutting down bot.".to_string())
                     .ephemeral(true)
             })
             .await
@@ -121,10 +124,8 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
         }
     } else if let Err(e) = ctx
         .send(|r| {
-            r.content(format!(
-                "You are not allowed to declare the end of a session."
-            ))
-            .ephemeral(true)
+            r.content("You are not allowed to declare the end of a session.".to_string())
+                .ephemeral(true)
         })
         .await
     {
@@ -167,12 +168,11 @@ impl EventHandler for Handler {
         if let serenity::Interaction::MessageComponent(component) = interaction {
             // the custom_id is set as Y-{index} or N-{index},
             // here we split it and get the Y and {index} separately.
-            let t = component.data.custom_id.split("-").collect::<Vec<&str>>();
-            let index;
+            let t = component.data.custom_id.split('-').collect::<Vec<&str>>();
             // tries to parse the index as usize but might fail.
             // (for example if the value of {index} is too high)
-            match t[1].parse::<usize>() {
-                Ok(i) => index = i,
+            let index = match t[1].parse::<usize>() {
+                Ok(i) => i,
                 Err(e) => {
                     error!(
                         "Failed to parse index, invalid component id ({}). {:?}",
@@ -183,9 +183,9 @@ impl EventHandler for Handler {
                     // i'll fix that eventually... probably. (it probably won't happen
                     // though cause you would basically need to overflow up to 4294967296
                     // different motions).
-                    index = 0;
+                    0
                 }
-            }
+            };
             info!("Received button press for vote index {} by user {}#{} with user id {}. The vote is {} (Y/N).", 
             &index, component.user.name, component.user.discriminator, component.user.id.0, t[0]);
             debug!("Received component interaction {:?}.", component);
@@ -250,7 +250,8 @@ impl EventHandler for Handler {
             } else if let Err(e) = component
                 .create_interaction_response(&ctx, |resp| {
                     resp.interaction_response_data(|dat| {
-                        dat.content(format!("This vote is over.")).ephemeral(true)
+                        dat.content("This vote is over.".to_string())
+                            .ephemeral(true)
                     })
                 })
                 .await
@@ -287,7 +288,7 @@ pub async fn create_vote(
         .send_message(&ctx, |m| {
             m.embed(|e| {
                 e.title("Vote")
-                    .description(format!("Proposal to {}.", proposal))
+                    .description(format!("Proposal to {proposal}."))
                     .color(ctx.data().lock().unwrap().color)
             })
             .components(|c| {
@@ -295,12 +296,12 @@ pub async fn create_vote(
                     r.create_button(|byes| {
                         byes.label("Yes")
                             .style(serenity::ButtonStyle::Success)
-                            .custom_id(format!("Y-{}", index))
+                            .custom_id(format!("Y-{index}"))
                     })
                     .create_button(|byes| {
                         byes.label("No")
                             .style(serenity::ButtonStyle::Danger)
-                            .custom_id(format!("N-{}", index))
+                            .custom_id(format!("N-{index}"))
                     })
                 })
             })

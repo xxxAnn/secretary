@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::*;
+use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct ChannelDelete {
@@ -35,18 +35,16 @@ impl ChannelDelete {
     pub async fn call(self, http: impl AsRef<Http>) {
         if let Err(e) = http.as_ref().delete_channel(self.channel_id).await {
             error!("Failed to delete channel. {:?}", e)
-        } else {
-            if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-                .send_message(&http, |msg| {
-                    msg.content("Vote passed.").reference_message((
-                        serenity::ChannelId(consts::VOTE_CHANNEL),
-                        serenity::MessageId(self.ogmsg),
-                    ))
-                })
-                .await
-            {
-                error!("Failed to announce vote success. {:?}", e)
-            }
+        } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+            .send_message(&http, |msg| {
+                msg.content("Vote passed.").reference_message((
+                    serenity::ChannelId(consts::VOTE_CHANNEL),
+                    serenity::MessageId(self.ogmsg),
+                ))
+            })
+            .await
+        {
+            error!("Failed to announce vote success. {:?}", e)
         }
     }
     pub fn action(self) -> VoteAction {
@@ -66,7 +64,7 @@ pub async fn channel_delete(
         ctx.author().id.0
     );
     debug!("Received context object {:?}.", &ctx);
-    if vec![969016622402650112, 970108683746951178].contains(&channel.id.0) {
+    if vec![969_016_622_402_650_112, 970_108_683_746_951_178].contains(&channel.id.0) {
         let _ = ctx
             .send(|m| {
                 m.content("You cannot delete these channels.")

@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::*;
+use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct MessageDelete {
@@ -38,18 +38,16 @@ impl MessageDelete {
 
         if let Err(e) = chann.delete_message(&http, self.message_id).await {
             error!("Failed to delete messages. {:?}", e)
-        } else {
-            if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-                .send_message(&http, |msg| {
-                    msg.content("Vote passed.").reference_message((
-                        serenity::ChannelId(consts::VOTE_CHANNEL),
-                        serenity::MessageId(self.ogmsg),
-                    ))
-                })
-                .await
-            {
-                error!("Failed to announce vote success. {:?}", e)
-            }
+        } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+            .send_message(&http, |msg| {
+                msg.content("Vote passed.").reference_message((
+                    serenity::ChannelId(consts::VOTE_CHANNEL),
+                    serenity::MessageId(self.ogmsg),
+                ))
+            })
+            .await
+        {
+            error!("Failed to announce vote success. {:?}", e)
         }
     }
     pub fn action(self) -> VoteAction {

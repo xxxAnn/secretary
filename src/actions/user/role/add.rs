@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct UserRoleAdd {

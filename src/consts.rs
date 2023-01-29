@@ -17,8 +17,8 @@
 
 use log::LevelFilter;
 
-pub const GUILD_ID: u64 = 969011076144431165;
-pub const VOTE_CHANNEL: u64 = 970108683746951178;
+pub const GUILD_ID: u64 = 969_011_076_144_431_165;
+pub const VOTE_CHANNEL: u64 = 970_108_683_746_951_178;
 pub const DEFAULT_NRQ: i16 = 1;
-pub const SESSION_NUMBER: u16 = 18;
+pub const SESSION_NUMBER: u16 = 20;
 pub const LEVEL: LevelFilter = LevelFilter::Info;

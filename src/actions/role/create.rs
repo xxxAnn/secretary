@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::*;
+use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct RoleCreate {
@@ -44,18 +44,16 @@ impl RoleCreate {
             .await
         {
             error!("Failed to create role. {:?}", e)
-        } else {
-            if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-                .send_message(&http, |msg| {
-                    msg.content("Vote passed.").reference_message((
-                        serenity::ChannelId(consts::VOTE_CHANNEL),
-                        serenity::MessageId(self.ogmsg),
-                    ))
-                })
-                .await
-            {
-                error!("Failed to announce vote success. {:?}", e)
-            }
+        } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+            .send_message(&http, |msg| {
+                msg.content("Vote passed.").reference_message((
+                    serenity::ChannelId(consts::VOTE_CHANNEL),
+                    serenity::MessageId(self.ogmsg),
+                ))
+            })
+            .await
+        {
+            error!("Failed to announce vote success. {:?}", e)
         }
     }
     pub fn action(self) -> VoteAction {
@@ -84,7 +82,7 @@ pub async fn role_create(
         format!("Create role called {}", &name),
         VoteAction::RoleCreate(RoleCreate {
             name,
-            colour: serenity::Colour::from_rgb(r, g, b).0 as u64,
+            colour: u64::from(serenity::Colour::from_rgb(r, g, b).0),
             position,
             ogmsg: 0,
             votes: 0,

@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::*;
+use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct TextChannelCreate {
@@ -47,18 +47,16 @@ impl TextChannelCreate {
                     .await
                 {
                     error!("Failed to create role. {:?}", e)
-                } else {
-                    if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-                        .send_message(&http, |msg| {
-                            msg.content("Vote passed.").reference_message((
-                                serenity::ChannelId(consts::VOTE_CHANNEL),
-                                serenity::MessageId(self.ogmsg),
-                            ))
-                        })
-                        .await
-                    {
-                        error!("Failed to announce vote success. {:?}", e)
-                    }
+                } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+                    .send_message(&http, |msg| {
+                        msg.content("Vote passed.").reference_message((
+                            serenity::ChannelId(consts::VOTE_CHANNEL),
+                            serenity::MessageId(self.ogmsg),
+                        ))
+                    })
+                    .await
+                {
+                    error!("Failed to announce vote success. {:?}", e)
                 }
             }
             None => {
@@ -71,18 +69,16 @@ impl TextChannelCreate {
                     .await
                 {
                     error!("Failed to create role. {:?}", e)
-                } else {
-                    if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-                        .send_message(&http, |msg| {
-                            msg.content("Vote passed.").reference_message((
-                                serenity::ChannelId(consts::VOTE_CHANNEL),
-                                serenity::MessageId(self.ogmsg),
-                            ))
-                        })
-                        .await
-                    {
-                        error!("Failed to announce vote success. {:?}", e)
-                    }
+                } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+                    .send_message(&http, |msg| {
+                        msg.content("Vote passed.").reference_message((
+                            serenity::ChannelId(consts::VOTE_CHANNEL),
+                            serenity::MessageId(self.ogmsg),
+                        ))
+                    })
+                    .await
+                {
+                    error!("Failed to announce vote success. {:?}", e)
                 }
             }
         }
@@ -111,7 +107,7 @@ pub async fn create_text(
         &ctx,
         format!("Create channel called {}", &name),
         VoteAction::TextChannelCreate(TextChannelCreate {
-            name: name,
+            name,
             category_id,
             topic,
             ogmsg: 0,

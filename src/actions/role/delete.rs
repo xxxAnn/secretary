@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::*;
+use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct RoleDelete {
@@ -38,18 +38,16 @@ impl RoleDelete {
             .await
         {
             error!("Failed to delete role. {:?}", e)
-        } else {
-            if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-                .send_message(&http, |msg| {
-                    msg.content("Vote passed.").reference_message((
-                        serenity::ChannelId(consts::VOTE_CHANNEL),
-                        serenity::MessageId(self.ogmsg),
-                    ))
-                })
-                .await
-            {
-                error!("Failed to announce vote success. {:?}", e)
-            }
+        } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+            .send_message(&http, |msg| {
+                msg.content("Vote passed.").reference_message((
+                    serenity::ChannelId(consts::VOTE_CHANNEL),
+                    serenity::MessageId(self.ogmsg),
+                ))
+            })
+            .await
+        {
+            error!("Failed to announce vote success. {:?}", e)
         }
     }
     pub fn action(self) -> VoteAction {
@@ -69,7 +67,7 @@ pub async fn role_delete(
         ctx.author().id.0
     );
     debug!("Received context object {:?}.", &ctx);
-    if vec![1069130087116578908].contains(&role.id.0) {
+    if vec![1_069_130_087_116_578_908].contains(&role.id.0) {
         let _ = ctx
             .send(|m| m.content("You cannot delete this role.").ephemeral(true))
             .await;
