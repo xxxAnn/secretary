@@ -38,6 +38,73 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[poise::command(slash_command, subcommands("view_roles", "view_channel_permissions"))]
+async fn view(_: Context<'_>) -> Result<(), Error> {
+    Ok(())
+}
+
+#[poise::command(slash_command, rename="roles")]
+async fn view_roles(ctx: Context<'_>) -> Result<(), Error> {
+    let guild = serenity::GuildId(consts::GUILD_ID);
+
+    if let Ok(roles) = guild.roles(&ctx).await {
+        let m = roles
+            .values()
+            .map(|r| 
+                {                        
+                    info!("{}", r.permissions);
+                    format!("{} : {} : {} : {} : {}",
+                        r.name, r.id, 
+                        if r.hoist { "Hoisted" } else { "Not hoisted" }, 
+                        format!("Position({})", r.position),
+                        format!("Permissions({})", r.permissions.bits())
+                        )
+                    }
+            )
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        if let Err(e) = ctx.say(m).await {
+            error!("Failed looking roles up. {:?}", e);
+            Err(Box::new(e))
+        } else {
+            Ok(())
+        }
+    } else {
+        error!("Failed to look up roles.");
+        Ok(()) // <- should be an error
+    }
+}
+
+#[poise::command(slash_command, rename="channel_permissions")]
+async fn view_channel_permissions(ctx: Context<'_>, c: serenity::GuildChannel) -> Result<(), Error> {
+    let perms = c.permission_overwrites;
+
+    let mut text = perms.iter().map(|p| {
+        return match p.kind {
+            serenity::PermissionOverwriteType::Role(r) => {
+                format!("Role <@&{0}> {1} view the channel. Role <@&{0}> {2} send messages in the channel.",
+                    r.0,
+                    if p.allow.view_channel() { "can" } else { "can't" },
+                    if p.allow.send_messages() { "can" } else { "can't" }
+                )
+            },
+            _ => "".to_owned() 
+        }
+    }).collect::<Vec<String>>().join("\n");
+
+    if text == "" {
+        text = "No specific channel permissions.".to_owned();
+    }
+
+    if let Err(e) = ctx.say(text).await {
+        error!("Couldn't find channel overwrites. {:?}", e);
+        Err(Box::new(e))
+    } else {
+        Ok(())
+    }
+}
+
 #[poise::command(slash_command)]
 async fn sync(ctx: Context<'_>) -> Result<(), Error> {
     ctx.data().lock().unwrap().nrq = (ctx
@@ -49,7 +116,7 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
         .iter()
         .filter(|m| {
             m.roles
-                .contains(&serenity::RoleId(1_069_130_087_116_578_908))
+                .contains(&serenity::RoleId(1069130087116578908))
         })
         .collect::<Vec<&serenity::Member>>()
         .len() as f32
@@ -93,6 +160,10 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
             })
             .await
             .unwrap();
+        if let Err(e) = serenity::GuildId(consts::GUILD_ID).edit_role(&ctx, serenity::RoleId(consts::GENERAL_SECRETARY_ROLE), |r| r
+            .permissions(serenity::Permissions::from_bits(1071698529857).unwrap() | serenity::Permissions::MODERATE_MEMBERS)).await {
+                error!("Error giving permissions to Assistant General Secretary. {:?}", &e);
+            }
         if let Err(e) = ctx
             .send(|r| {
                 r.content("Succesfully ended session. Shutting down bot.".to_string())
@@ -144,6 +215,14 @@ struct Handler {
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
+        let guild_id = serenity::GuildId(consts::GUILD_ID);
+        for m in guild_id.members(&ctx, None, None).await.expect("Could not find members").iter_mut().filter(|m: &&mut serenity::Member| !m.communication_disabled_until.is_none()) {
+            m.enable_communication(&ctx).await.unwrap();
+        }
+        if let Err(e) = guild_id.edit_role(&ctx, serenity::RoleId(consts::GENERAL_SECRETARY_ROLE), |r| r
+            .permissions(serenity::Permissions::from_bits(1071698529857).unwrap())).await {
+                error!("Error giving permissions to Assistant General Secretary. {:?}", &e);
+            }
         serenity::ChannelId(consts::VOTE_CHANNEL)
             .send_message(&ctx, |msg| {
                 msg.embed(|e| {
@@ -192,7 +271,6 @@ impl EventHandler for Handler {
             let mut p: i16 = 0;
             let r = component.user.id.0;
             debug!("Checking if vote {} is finished.", &index);
-            // here we check if the vote is marked as finished
             if !self.d.lock().unwrap().v[index].is_finished() {
                 debug!("Vote wasn't finished. Calculating appropriate value to add to the vote.");
                 // adds 1 if the vote marker is "Y" otherwise removes 1. this is the better
@@ -219,17 +297,11 @@ impl EventHandler for Handler {
                 );
                 if tally >= self.d.lock().unwrap().nrq {
                     debug!("Dummy Creating dummy to call and throw away.");
-                    // creates a dummy, a clone of the VoteAction. this is so it can be thrown
-                    // away with all its fields. the call function may need ownership of Self.
                     let dummy = self.d.lock().unwrap().v[index].dummy();
                     debug!("Created dummy VoteAction {:?}.", dummy);
                     debug!("Calling dummy.");
-                    // calls the function with the ctx.
-                    // this takes ownership of the dummy and drops it.
-                    // this is very likely to make http calls to discord.
                     dummy.call(&ctx).await;
                     debug!("Setting vote as completed.");
-                    // sets the actual VoteAction as finished.
                     self.d.lock().unwrap().v[index].set_finished();
                 }
                 if let Err(e) = component
@@ -355,7 +427,7 @@ async fn main() {
     let data2 = data.clone();
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![propose(), sync(), declare_session_end()],
+            commands: vec![propose(), sync(), declare_session_end(), view()],
             ..Default::default()
         })
         .client_settings(|c| c.event_handler(Handler { d: data }))

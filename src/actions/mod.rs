@@ -56,7 +56,9 @@ generate_vote_actions!(
     ChannelDelete,
     UserRoleRemove,
     CategoryChannelCreate,
-    ChannelPurge
+    ChannelPurge,
+    RoleSetPosition,
+    RoleHoist
 );
 
 /*

@@ -64,7 +64,7 @@ pub async fn channel_delete(
         ctx.author().id.0
     );
     debug!("Received context object {:?}.", &ctx);
-    if vec![969_016_622_402_650_112, 970_108_683_746_951_178].contains(&channel.id.0) {
+    if Vec::from(consts::CANNOT_MODIFY_CHANNEL).contains(&channel.id.0) {
         let _ = ctx
             .send(|m| {
                 m.content("You cannot delete these channels.")

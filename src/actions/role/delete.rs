@@ -67,7 +67,7 @@ pub async fn role_delete(
         ctx.author().id.0
     );
     debug!("Received context object {:?}.", &ctx);
-    if vec![1_069_130_087_116_578_908].contains(&role.id.0) {
+    if Vec::from(consts::CANNOT_MODIFY).contains(&role.id.0) {
         let _ = ctx
             .send(|m| m.content("You cannot delete this role.").ephemeral(true))
             .await;
