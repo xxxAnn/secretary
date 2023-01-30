@@ -1,2 +1,5 @@
 - Role rename (actions/role/rename)
 - Channel move (actions/channel/move)
+- User kick (actions/user/kick)
+- User ban (actions/user/ban)
+- User timeout (actions/user/timeout)
