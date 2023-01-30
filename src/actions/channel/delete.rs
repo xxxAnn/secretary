@@ -75,7 +75,7 @@ pub async fn channel_delete(
     } else {
         create_vote(
             &ctx,
-            format!("Delete the <#{}> channel.", &channel.id.0),
+            format!("Delete the <#{}> channel", &channel.id.0),
             VoteAction::ChannelDelete(ChannelDelete {
                 channel_id: channel.id.0,
                 votes: 0,
