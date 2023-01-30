@@ -88,6 +88,14 @@ pub async fn cant_send(
             .send(|m| m.content("You cannot modify this role.").ephemeral(true))
             .await;
         Ok(())
+    } else if Vec::from(consts::CANNOT_MODIFY_CHANNEL).contains(&channel.id.0) {
+        let _ = ctx
+            .send(|m| {
+                m.content("You cannot delete these channels.")
+                    .ephemeral(true)
+            })
+            .await;
+        Ok(())
     } else {
         create_vote(
             &ctx,
