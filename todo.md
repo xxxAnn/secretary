@@ -4,3 +4,5 @@
 - User kick (actions/user/kick)
 - User ban (actions/user/ban)
 - User timeout (actions/user/timeout)
+- Remove access to the propose channel when a Session ends.
+- Clearer visual guide to all the commands.
