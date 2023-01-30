@@ -7,8 +7,9 @@ Using the bot, any member of The "Commune" server who has obtained the "Voter" r
 ## (actions/channel/purge) Purge messages from a channel
 
 ## (actions/channel/textcreate) Create a text channel
+Usage: /propose channel create_voice \<name\> \[category\]
 
 ## (actions/channel/voicecreate) Create a voice channel
-Usage: /propose channel create_voice \<name\> \[category\]
+Usage: /propose channel create_voice \<name\> \<topic\> \[category\]
 
 ## (actions/channel/categorycreate) Create a category
