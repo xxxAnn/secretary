@@ -136,7 +136,7 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
-    if ctx.author().id == 331_431_342_438_875_137 {
+    if ctx.author().id == 331431342438875137 {
         let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
         let l = ctx.data().lock().unwrap().v.len();
         serenity::ChannelId(consts::VOTE_CHANNEL)
@@ -384,7 +384,22 @@ pub async fn create_vote(
         Err(e) => error!("Failed to send vote proposal. {:?}", e),
     }
 
+
+    va.already_voted(ctx.author().id.0, true);
+    let tally = va.handle_tally(1);
+    
     ctx.data().lock().unwrap().v.push(va);
+
+    if tally >= ctx.data().lock().unwrap().nrq {
+        debug!("Dummy Creating dummy to call and throw away.");
+        let dummy = ctx.data().lock().unwrap().v[index].dummy();
+        debug!("Created dummy VoteAction {:?}.", dummy);
+        debug!("Calling dummy.");
+        dummy.call(&ctx).await;
+        debug!("Setting vote as completed.");
+        ctx.data().lock().unwrap().v[index].set_finished();
+    }
+
 
     if let Err(e) = ctx
         .send(|f| f.content("Succesfully created proposal").ephemeral(true))

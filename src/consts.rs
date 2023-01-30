@@ -20,8 +20,11 @@ use log::LevelFilter;
 pub const GUILD_ID: u64 = 969_011_076_144_431_165;
 pub const VOTE_CHANNEL: u64 = 970_108_683_746_951_178;
 pub const DEFAULT_NRQ: i16 = 1;
-pub const SESSION_NUMBER: u16 = 31;
+pub const SESSION_NUMBER: u16 = 33;
 pub const LEVEL: LevelFilter = LevelFilter::Info;
+// These roles cannot be deleted and their permissions cannot be modified.
 pub const CANNOT_MODIFY: &'static [u64] = &[1069130087116578908, 1069432736982499438];
+// These roles 
 pub const CANNOT_MODIFY_CHANNEL: &'static [u64] = &[969016622402650112, 970108683746951178];
+// This is the moderator role, it only has permissions when the bot isn't in session.
 pub const GENERAL_SECRETARY_ROLE: u64 = 1069432736982499438;
