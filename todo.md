@@ -1,1 +1,2 @@
 - Role rename (actions/role/rename)
+- Channel move (actions/channel/move)
