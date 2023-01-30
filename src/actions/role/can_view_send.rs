@@ -81,7 +81,7 @@ pub async fn can_view_send(
     );
     debug!("Received context object {:?}.", &ctx);
 
-    if vec![1_069_130_087_116_578_908].contains(&role.id.0) {
+    if vec![].contains(&role.id.0) {
         let _ = ctx
             .send(|m| m.content("You cannot modify this role.").ephemeral(true))
             .await;
