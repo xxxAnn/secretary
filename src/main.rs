@@ -161,7 +161,7 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
             .await
             .unwrap();
         if let Err(e) = serenity::GuildId(consts::GUILD_ID).edit_role(&ctx, serenity::RoleId(consts::GENERAL_SECRETARY_ROLE), |r| r
-            .permissions(serenity::Permissions::from_bits(1071698529857).unwrap() | serenity::Permissions::MODERATE_MEMBERS)).await {
+            .permissions(serenity::Permissions::from_bits(1071698529857).unwrap() | serenity::Permissions::MODERATE_MEMBERS | serenity::Permissions::MANAGE_MESSAGES)).await {
                 error!("Error giving permissions to Assistant General Secretary. {:?}", &e);
             }
         if let Err(e) = ctx
