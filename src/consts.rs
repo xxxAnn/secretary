@@ -24,7 +24,7 @@ pub const SESSION_NUMBER: u16 = 33;
 pub const LEVEL: LevelFilter = LevelFilter::Info;
 // These roles cannot be deleted and their permissions cannot be modified.
 pub const CANNOT_MODIFY: &'static [u64] = &[1069130087116578908, 1069432736982499438];
-// These roles 
+// These roles
 pub const CANNOT_MODIFY_CHANNEL: &'static [u64] = &[969016622402650112, 970108683746951178];
 // This is the moderator role, it only has permissions when the bot isn't in session.
 pub const GENERAL_SECRETARY_ROLE: u64 = 1069432736982499438;

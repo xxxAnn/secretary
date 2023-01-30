@@ -35,11 +35,7 @@ impl RoleSetPosition {
     }
     pub async fn call(self, http: impl AsRef<Http>) {
         if let Err(e) = serenity::GuildId(consts::GUILD_ID)
-            .edit_role_position(
-                &http,
-                serenity::RoleId(self.role_id),
-                self.position
-            )
+            .edit_role_position(&http, serenity::RoleId(self.role_id), self.position)
             .await
         {
             error!("Failed to edit role position. {:?}", e);
@@ -52,11 +48,8 @@ impl RoleSetPosition {
 
 #[poise::command(
     slash_command,
-    description_localized(
-        "en-US",
-        "Changes the position of the role."
-    ),
-    rename="set_position"
+    description_localized("en-US", "Changes the position of the role."),
+    rename = "set_position"
 )]
 pub async fn role_set_position(
     ctx: Context<'_>,
@@ -79,10 +72,7 @@ pub async fn role_set_position(
     } else {
         create_vote(
             &ctx,
-            format!(
-                "Move role <@&{}> to Position({})",
-                &role.id.0, &position
-            ),
+            format!("Move role <@&{}> to Position({})", &role.id.0, &position),
             VoteAction::RoleSetPosition(RoleSetPosition {
                 role_id: role.id.0,
                 position,

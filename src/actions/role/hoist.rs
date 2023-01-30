@@ -35,9 +35,9 @@ impl RoleHoist {
     }
     pub async fn call(self, http: impl AsRef<Http>) {
         if let Err(e) = serenity::GuildId(consts::GUILD_ID)
-            .edit_role(&http, serenity::RoleId(self.role_id), |r| r
-                .hoist(self.hoist)
-            )
+            .edit_role(&http, serenity::RoleId(self.role_id), |r| {
+                r.hoist(self.hoist)
+            })
             .await
         {
             error!("Failed to edit role position. {:?}", e);
@@ -50,11 +50,8 @@ impl RoleHoist {
 
 #[poise::command(
     slash_command,
-    description_localized(
-        "en-US",
-        "Makes the role visible in the user bar."
-    ),
-    rename="hoist"
+    description_localized("en-US", "Makes the role visible in the user bar."),
+    rename = "hoist"
 )]
 pub async fn role_hoist(
     ctx: Context<'_>,
@@ -76,10 +73,7 @@ pub async fn role_hoist(
     } else {
         create_vote(
             &ctx,
-            format!(
-                "Proposal to hoist role <@&{}>",
-                &role.id.0
-            ),
+            format!("Proposal to hoist role <@&{}>", &role.id.0),
             VoteAction::RoleHoist(RoleHoist {
                 role_id: role.id.0,
                 hoist: true,
@@ -95,11 +89,8 @@ pub async fn role_hoist(
 
 #[poise::command(
     slash_command,
-    description_localized(
-        "en-US",
-        "Removes the role from the user bar."
-    ),
-    rename="unhoist"
+    description_localized("en-US", "Removes the role from the user bar."),
+    rename = "unhoist"
 )]
 pub async fn role_unhoist(
     ctx: Context<'_>,
@@ -121,10 +112,7 @@ pub async fn role_unhoist(
     } else {
         create_vote(
             &ctx,
-            format!(
-                "Proposal to unhoist role <@&{}>",
-                &role.id.0
-            ),
+            format!("Proposal to unhoist role <@&{}>", &role.id.0),
             VoteAction::RoleHoist(RoleHoist {
                 role_id: role.id.0,
                 hoist: false,

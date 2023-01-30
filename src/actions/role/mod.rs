@@ -20,8 +20,8 @@ pub mod cant_send;
 pub mod cant_view;
 pub mod create;
 pub mod delete;
-pub mod set_position;
 pub mod hoist;
+pub mod set_position;
 
 pub use can_view_send::*;
 pub use cant_send::*;

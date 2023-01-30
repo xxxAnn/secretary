@@ -43,24 +43,24 @@ async fn view(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(slash_command, rename="roles")]
+#[poise::command(slash_command, rename = "roles")]
 async fn view_roles(ctx: Context<'_>) -> Result<(), Error> {
     let guild = serenity::GuildId(consts::GUILD_ID);
 
     if let Ok(roles) = guild.roles(&ctx).await {
         let m = roles
             .values()
-            .map(|r| 
-                {                        
-                    info!("{}", r.permissions);
-                    format!("{} : {} : {} : {} : {}",
-                        r.name, r.id, 
-                        if r.hoist { "Hoisted" } else { "Not hoisted" }, 
-                        format!("Position({})", r.position),
-                        format!("Permissions({})", r.permissions.bits())
-                        )
-                    }
-            )
+            .map(|r| {
+                info!("{}", r.permissions);
+                format!(
+                    "{} : {} : {} : {} : {}",
+                    r.name,
+                    r.id,
+                    if r.hoist { "Hoisted" } else { "Not hoisted" },
+                    format!("Position({})", r.position),
+                    format!("Permissions({})", r.permissions.bits())
+                )
+            })
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -76,8 +76,11 @@ async fn view_roles(ctx: Context<'_>) -> Result<(), Error> {
     }
 }
 
-#[poise::command(slash_command, rename="channel_permissions")]
-async fn view_channel_permissions(ctx: Context<'_>, c: serenity::GuildChannel) -> Result<(), Error> {
+#[poise::command(slash_command, rename = "channel_permissions")]
+async fn view_channel_permissions(
+    ctx: Context<'_>,
+    c: serenity::GuildChannel,
+) -> Result<(), Error> {
     let perms = c.permission_overwrites;
 
     let mut text = perms.iter().map(|p| {
@@ -114,10 +117,7 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
         .await
         .unwrap()
         .iter()
-        .filter(|m| {
-            m.roles
-                .contains(&serenity::RoleId(1069130087116578908))
-        })
+        .filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908)))
         .collect::<Vec<&serenity::Member>>()
         .len() as f32
         / 3f32)
@@ -160,10 +160,25 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
             })
             .await
             .unwrap();
-        if let Err(e) = serenity::GuildId(consts::GUILD_ID).edit_role(&ctx, serenity::RoleId(consts::GENERAL_SECRETARY_ROLE), |r| r
-            .permissions(serenity::Permissions::from_bits(1071698529857).unwrap() | serenity::Permissions::MODERATE_MEMBERS | serenity::Permissions::MANAGE_MESSAGES)).await {
-                error!("Error giving permissions to Assistant General Secretary. {:?}", &e);
-            }
+        if let Err(e) = serenity::GuildId(consts::GUILD_ID)
+            .edit_role(
+                &ctx,
+                serenity::RoleId(consts::GENERAL_SECRETARY_ROLE),
+                |r| {
+                    r.permissions(
+                        serenity::Permissions::from_bits(1071698529857).unwrap()
+                            | serenity::Permissions::MODERATE_MEMBERS
+                            | serenity::Permissions::MANAGE_MESSAGES,
+                    )
+                },
+            )
+            .await
+        {
+            error!(
+                "Error giving permissions to Assistant General Secretary. {:?}",
+                &e
+            );
+        }
         if let Err(e) = ctx
             .send(|r| {
                 r.content("Succesfully ended session. Shutting down bot.".to_string())
@@ -216,13 +231,28 @@ struct Handler {
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
         let guild_id = serenity::GuildId(consts::GUILD_ID);
-        for m in guild_id.members(&ctx, None, None).await.expect("Could not find members").iter_mut().filter(|m: &&mut serenity::Member| !m.communication_disabled_until.is_none()) {
+        for m in guild_id
+            .members(&ctx, None, None)
+            .await
+            .expect("Could not find members")
+            .iter_mut()
+            .filter(|m: &&mut serenity::Member| !m.communication_disabled_until.is_none())
+        {
             m.enable_communication(&ctx).await.unwrap();
         }
-        if let Err(e) = guild_id.edit_role(&ctx, serenity::RoleId(consts::GENERAL_SECRETARY_ROLE), |r| r
-            .permissions(serenity::Permissions::from_bits(1071698529857).unwrap())).await {
-                error!("Error giving permissions to Assistant General Secretary. {:?}", &e);
-            }
+        if let Err(e) = guild_id
+            .edit_role(
+                &ctx,
+                serenity::RoleId(consts::GENERAL_SECRETARY_ROLE),
+                |r| r.permissions(serenity::Permissions::from_bits(1071698529857).unwrap()),
+            )
+            .await
+        {
+            error!(
+                "Error giving permissions to Assistant General Secretary. {:?}",
+                &e
+            );
+        }
         serenity::ChannelId(consts::VOTE_CHANNEL)
             .send_message(&ctx, |msg| {
                 msg.embed(|e| {
@@ -270,65 +300,69 @@ impl EventHandler for Handler {
             debug!("Received component interaction {:?}.", component);
             let mut p: i16 = 0;
             let r = component.user.id.0;
-            debug!("Checking if vote {} is finished.", &index);
-            if !self.d.lock().unwrap().v[index].is_finished() {
-                debug!("Vote wasn't finished. Calculating appropriate value to add to the vote.");
-                // adds 1 if the vote marker is "Y" otherwise removes 1. this is the better
-                // way to do it since accidentally voting against a proposition
-                // is less problematic than accidentally voting for, which
-                // may wrongly trigger the execution of the command in the case of an error.
-                if t[0] == "Y" {
-                    p += 1
-                } else {
-                    p -= 1
-                }
-                // the already voted function will return 0 if the user already voted in the same way
-                // hence not doing anything. if the user already voted in the opposite way it returns
-                // 2 hence cancelling their previous vote. it returns 1 if the user hasn't previously voted.
-                p *= self.d.lock().unwrap().v[index].already_voted(r, t[0] == "Y");
-                debug!("Adding {} to the vote.", p);
-                debug!("Calculating and incrementing the vote tally.");
-                // calculates the number of vote after p is added to it
-                let tally = self.d.lock().unwrap().v[index].handle_tally(p);
-                debug!("Tally is now {}", tally);
-                debug!(
-                    "Verifying if tally attained required number of votes ({}).",
-                    self.d.lock().unwrap().nrq
-                );
-                if tally >= self.d.lock().unwrap().nrq {
-                    debug!("Dummy Creating dummy to call and throw away.");
-                    let dummy = self.d.lock().unwrap().v[index].dummy();
-                    debug!("Created dummy VoteAction {:?}.", dummy);
-                    debug!("Calling dummy.");
-                    dummy.call(&ctx).await;
-                    debug!("Setting vote as completed.");
-                    self.d.lock().unwrap().v[index].set_finished();
-                }
-                if let Err(e) = component
+            if self.d.lock().unwrap().v.get(index).is_some() {
+                debug!("Checking if vote {} is finished.", &index);
+                if !self.d.lock().unwrap().v[index].is_finished() {
+                    debug!(
+                        "Vote wasn't finished. Calculating appropriate value to add to the vote."
+                    );
+                    // adds 1 if the vote marker is "Y" otherwise removes 1. this is the better
+                    // way to do it since accidentally voting against a proposition
+                    // is less problematic than accidentally voting for, which
+                    // may wrongly trigger the execution of the command in the case of an error.
+                    if t[0] == "Y" {
+                        p += 1
+                    } else {
+                        p -= 1
+                    }
+                    // the already voted function will return 0 if the user already voted in the same way
+                    // hence not doing anything. if the user already voted in the opposite way it returns
+                    // 2 hence cancelling their previous vote. it returns 1 if the user hasn't previously voted.
+                    p *= self.d.lock().unwrap().v[index].already_voted(r, t[0] == "Y");
+                    debug!("Adding {} to the vote.", p);
+                    debug!("Calculating and incrementing the vote tally.");
+                    // calculates the number of vote after p is added to it
+                    let tally = self.d.lock().unwrap().v[index].handle_tally(p);
+                    debug!("Tally is now {}", tally);
+                    debug!(
+                        "Verifying if tally attained required number of votes ({}).",
+                        self.d.lock().unwrap().nrq
+                    );
+                    if tally >= self.d.lock().unwrap().nrq {
+                        debug!("Dummy Creating dummy to call and throw away.");
+                        let dummy = self.d.lock().unwrap().v[index].dummy();
+                        debug!("Created dummy VoteAction {:?}.", dummy);
+                        debug!("Calling dummy.");
+                        dummy.call(&ctx).await;
+                        debug!("Setting vote as completed.");
+                        self.d.lock().unwrap().v[index].set_finished();
+                    }
+                    if let Err(e) = component
+                        .create_interaction_response(&ctx, |resp| {
+                            resp.interaction_response_data(|dat| {
+                                dat.content(format!(
+                                    "Succesfully voted. {}/{}",
+                                    tally,
+                                    self.d.lock().unwrap().nrq
+                                ))
+                                .ephemeral(true)
+                            })
+                        })
+                        .await
+                    {
+                        error!("Failed to reply to interaction. {:?}", e)
+                    }
+                } else if let Err(e) = component
                     .create_interaction_response(&ctx, |resp| {
                         resp.interaction_response_data(|dat| {
-                            dat.content(format!(
-                                "Succesfully voted. {}/{}",
-                                tally,
-                                self.d.lock().unwrap().nrq
-                            ))
-                            .ephemeral(true)
+                            dat.content("This vote is over.".to_string())
+                                .ephemeral(true)
                         })
                     })
                     .await
                 {
                     error!("Failed to reply to interaction. {:?}", e)
                 }
-            } else if let Err(e) = component
-                .create_interaction_response(&ctx, |resp| {
-                    resp.interaction_response_data(|dat| {
-                        dat.content("This vote is over.".to_string())
-                            .ephemeral(true)
-                    })
-                })
-                .await
-            {
-                error!("Failed to reply to interaction. {:?}", e)
             }
         }
     }
@@ -384,10 +418,9 @@ pub async fn create_vote(
         Err(e) => error!("Failed to send vote proposal. {:?}", e),
     }
 
-
     va.already_voted(ctx.author().id.0, true);
     let tally = va.handle_tally(1);
-    
+
     ctx.data().lock().unwrap().v.push(va);
 
     if tally >= ctx.data().lock().unwrap().nrq {
@@ -399,7 +432,6 @@ pub async fn create_vote(
         debug!("Setting vote as completed.");
         ctx.data().lock().unwrap().v[index].set_finished();
     }
-
 
     if let Err(e) = ctx
         .send(|f| f.content("Succesfully created proposal").ephemeral(true))
