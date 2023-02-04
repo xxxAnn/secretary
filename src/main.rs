@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#![feature(async_closure)]
 
 use std::{
     io::Write,
@@ -227,6 +228,58 @@ struct Handler {
     d: Arc<Mutex<Data>>,
 }
 
+#[macro_export]
+macro_rules! vote_action {
+    ($n:ident, $b:expr, $($f:ident: $t:ty),+) => {
+        #[derive(Debug, Clone)]
+        pub struct $n {
+            $($f: $t,)+
+            //
+            votes: i16,
+            pub ogmsg: u64,
+            pub already_voted: Vec<(u64, bool)>,
+            pub finished: bool,
+        }
+
+        impl $n {
+            pub fn handle(&mut self, p: i16) -> i16 {
+                self.votes += p;
+
+                self.votes
+            }
+            #[inline(always)]
+            pub async fn call(self, http: std::sync::Arc<Http>) {
+                $b(self, http).await;
+            }
+            pub fn action(self) -> VoteAction {
+                VoteAction::$n(self)
+            }
+            pub fn new($($f: $t,)+) -> Self {
+                Self {
+                    votes: 1,
+                    ogmsg: 0,
+                    already_voted: Vec::new(),
+                    finished: false,
+                    $($f,)+
+                }
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! generate_command {
+    ($fnm:ident, $rnm:expr, $txt:expr, $g:expr, $($e:expr, $n:ident: $t:ty),*) => {
+        #[poise::command(slash_command, rename=$rnm)]
+        pub async fn $fnm(
+            ctx: Context<'_>,
+            $(#[description = $e] $n: $t,)*
+        ) -> Result<(), Error> {
+            create_vote(&ctx, $txt($(&$n,)*), $g($($n,)*)).await
+        }
+    }
+}
+
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
@@ -428,7 +481,7 @@ pub async fn create_vote(
         let dummy = ctx.data().lock().unwrap().v[index].dummy();
         debug!("Created dummy VoteAction {:?}.", dummy);
         debug!("Calling dummy.");
-        dummy.call(&ctx).await;
+        dummy.call(ctx.serenity_context()).await;
         debug!("Setting vote as completed.");
         ctx.data().lock().unwrap().v[index].set_finished();
     }

@@ -79,8 +79,8 @@ impl VoteAction {
     pub fn dummy(&self) -> Self {
         unwrap!(self, m => m.clone().action())
     }
-    pub async fn call(self, http: impl AsRef<poise::serenity_prelude::Http>) {
-        unwrap!(self, m => m.call(http).await);
+    pub async fn call(self, ctx: &crate::serenity::Context) {
+        unwrap!(self, m => m.call(ctx.http.clone()).await);
     }
     pub fn is_finished(&self) -> bool {
         unwrap!(self, m => m.finished)
