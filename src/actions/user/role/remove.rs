@@ -15,7 +15,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, error, serenity, Context, Error, Http, VoteAction, vote_action, generate_command};
+use crate::{
+    consts, create_vote, error, generate_command, serenity, vote_action, Context, Error, Http,
+    VoteAction,
+};
 
 vote_action!(
     UserRoleRemove,

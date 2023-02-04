@@ -15,48 +15,35 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
+use crate::{
+    consts, create_vote, debug, error, info, serenity, vote_action, Context, Error, Http,
+    VoteAction,
+};
 
-#[derive(Debug, Clone)]
-pub struct ChannelPurge {
-    channel_id: u64,
-    limit: u64,
-    votes: i16,
-    pub ogmsg: u64,
-    pub already_voted: Vec<(u64, bool)>,
-    pub finished: bool,
-}
-
-impl ChannelPurge {
-    pub fn handle(&mut self, p: i16) -> i16 {
-        self.votes += p;
-
-        self.votes
-    }
-    pub async fn call(self, http: impl AsRef<Http>) {
-        let cid = serenity::ChannelId(self.channel_id);
-        let mids = cid
-            .messages(&http, |ms| ms.limit(self.limit))
-            .await
-            .unwrap();
-        if let Err(e) = cid.delete_messages(&http, mids).await {
-            error!("Failed to purge channel. {:?}", e)
-        } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-            .send_message(&http, |msg| {
-                msg.content("Vote passed.").reference_message((
-                    serenity::ChannelId(consts::VOTE_CHANNEL),
-                    serenity::MessageId(self.ogmsg),
-                ))
-            })
-            .await
-        {
-            error!("Failed to announce vote success. {:?}", e)
+vote_action!(
+    ChannelPurge,
+    move |me: ChannelPurge, http: std::sync::Arc<Http>| {
+        async move {
+            let cid = serenity::ChannelId(me.channel_id);
+            let mids = cid.messages(&http, |ms| ms.limit(me.limit)).await.unwrap();
+            if let Err(e) = cid.delete_messages(&http, mids).await {
+                error!("Failed to purge channel. {:?}", e)
+            } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+                .send_message(&http, |msg| {
+                    msg.content("Vote passed.").reference_message((
+                        serenity::ChannelId(consts::VOTE_CHANNEL),
+                        serenity::MessageId(me.ogmsg),
+                    ))
+                })
+                .await
+            {
+                error!("Failed to announce vote success. {:?}", e)
+            }
         }
-    }
-    pub fn action(self) -> VoteAction {
-        VoteAction::ChannelPurge(self)
-    }
-}
+    },
+    channel_id: u64,
+    limit: u64
+);
 
 #[poise::command(
     slash_command,

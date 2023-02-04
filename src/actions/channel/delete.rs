@@ -15,42 +15,32 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
+use crate::{
+    consts, create_vote, debug, error, info, serenity, vote_action, Context, Error, Http,
+    VoteAction,
+};
 
-#[derive(Debug, Clone)]
-pub struct ChannelDelete {
-    channel_id: u64,
-    votes: i16,
-    pub ogmsg: u64,
-    pub already_voted: Vec<(u64, bool)>,
-    pub finished: bool,
-}
-
-impl ChannelDelete {
-    pub fn handle(&mut self, p: i16) -> i16 {
-        self.votes += p;
-
-        self.votes
-    }
-    pub async fn call(self, http: impl AsRef<Http>) {
-        if let Err(e) = http.as_ref().delete_channel(self.channel_id).await {
-            error!("Failed to delete channel. {:?}", e)
-        } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
-            .send_message(&http, |msg| {
-                msg.content("Vote passed.").reference_message((
-                    serenity::ChannelId(consts::VOTE_CHANNEL),
-                    serenity::MessageId(self.ogmsg),
-                ))
-            })
-            .await
-        {
-            error!("Failed to announce vote success. {:?}", e)
+vote_action!(
+    ChannelDelete,
+    move |me: ChannelDelete, http: std::sync::Arc<Http>| {
+        async move {
+            if let Err(e) = http.as_ref().delete_channel(me.channel_id).await {
+                error!("Failed to delete channel. {:?}", e)
+            } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
+                .send_message(&http, |msg| {
+                    msg.content("Vote passed.").reference_message((
+                        serenity::ChannelId(consts::VOTE_CHANNEL),
+                        serenity::MessageId(me.ogmsg),
+                    ))
+                })
+                .await
+            {
+                error!("Failed to announce vote success. {:?}", e)
+            }
         }
-    }
-    pub fn action(self) -> VoteAction {
-        VoteAction::ChannelDelete(self)
-    }
-}
+    },
+    channel_id: u64
+);
 
 #[poise::command(slash_command, rename = "delete")]
 pub async fn channel_delete(
