@@ -16,12 +16,15 @@
 */
 
 pub mod role;
+pub mod remove;
 
+pub use remove::*;
 pub use role::*;
+
 
 use crate::{Context, Error};
 
-#[poise::command(slash_command, subcommands("role_add", "role_remove"))]
+#[poise::command(slash_command, subcommands("role_add", "role_remove", "user_kick"))]
 pub async fn user(_: Context<'_>) -> Result<(), Error> {
     Ok(())
 }

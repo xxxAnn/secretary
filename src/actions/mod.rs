@@ -58,7 +58,8 @@ generate_vote_actions!(
     CategoryChannelCreate,
     ChannelPurge,
     RoleSetPosition,
-    RoleHoist
+    RoleHoist,
+    UserKick
 );
 
 /*

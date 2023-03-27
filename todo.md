@@ -8,3 +8,4 @@
 - Clearer visual guide to all the commands.
 - Economic system
 - Political power
+- Move locals to yml

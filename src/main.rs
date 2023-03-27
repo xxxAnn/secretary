@@ -28,10 +28,13 @@ use poise::{
 
 use log::{debug, error, info};
 
+use std::collections::BTreeMap;
+
 mod actions;
 mod consts;
 
 use actions::{channel, message, role, user, VoteAction};
+use Language::English;
 use rand::Rng;
 
 #[poise::command(slash_command, subcommands("message", "role", "user", "channel"))]
@@ -42,6 +45,21 @@ async fn propose(_: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command, subcommands("view_roles", "view_channel_permissions"))]
 async fn view(_: Context<'_>) -> Result<(), Error> {
     Ok(())
+}
+
+pub enum Language {
+    English
+}
+
+fn get_local<'a>(lang: Language, key: &'a str) -> String {
+    let m: BTreeMap<String, String> = match lang {
+        Language::English => serde_yaml::from_str(&std::fs::read_to_string("locals/eng.yml").unwrap()).unwrap()
+    };
+
+    return match m.get(key) {
+        Some(c) => c.to_string(),
+        None => "Template text".to_string()
+    }
 }
 
 #[poise::command(slash_command, rename = "roles")]
@@ -66,13 +84,13 @@ async fn view_roles(ctx: Context<'_>) -> Result<(), Error> {
             .join("\n");
 
         if let Err(e) = ctx.say(m).await {
-            error!("Failed looking roles up. {:?}", e);
+            error!("{}", get_local(English, "view_roles_0_error"));
             Err(Box::new(e))
         } else {
             Ok(())
         }
     } else {
-        error!("Failed to look up roles.");
+        error!("{}", get_local(English, "view_roles_0_error"));
         Ok(()) // <- should be an error
     }
 }
@@ -102,7 +120,7 @@ async fn view_channel_permissions(
     }
 
     if let Err(e) = ctx.say(text).await {
-        error!("Couldn't find channel overwrites. {:?}", e);
+        error!("{}", get_local(English, "view_channel_permissions_0"));
         Err(Box::new(e))
     } else {
         Ok(())
@@ -146,15 +164,17 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
                     e.title(format!("Session {}", consts::SESSION_NUMBER))
                         .description(format!(
                             "End of Session. 
-            Session started on {} and lasted {} hour(s). Passed {} motion(s) this session.
-            ",
+                            Session started on {} and lasted {} hour(s). Passed {} motion(s) this session. 
+                            The <#{}> channel was closed. 
+                            ",
                             ctx.data()
                                 .lock()
                                 .unwrap()
                                 .started
                                 .format("%Y-%m-%d at %H:%M:%S UTC+0"),
                             k.num_hours(),
-                            l
+                            l,
+                            consts::PROPOSE_CHANNEL
                         ))
                         .color(ctx.data().lock().unwrap().color)
                 })
@@ -206,7 +226,18 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
                 ),
             )
             .unwrap();
-
+            if let Err(e) = serenity::ChannelId(consts::PROPOSE_CHANNEL)
+                .create_permission(
+                    &ctx,
+                    &serenity::PermissionOverwrite {
+                        allow: serenity::Permissions::VIEW_CHANNEL,
+                        deny: serenity::Permissions::SEND_MESSAGES,
+                        kind: serenity::PermissionOverwriteType::Role(serenity::RoleId(consts::VOTER_ROLE)),
+                    },
+                ).await
+            {
+                error!("Failed to edit propose channel permissions. {:?}", e)
+            }
             std::process::abort();
         }
     } else if let Err(e) = ctx
@@ -284,6 +315,19 @@ macro_rules! generate_command {
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
         let guild_id = serenity::GuildId(consts::GUILD_ID);
+        if let Err(e) = serenity::ChannelId(consts::PROPOSE_CHANNEL)
+            .create_permission(
+                &ctx,
+                &serenity::PermissionOverwrite {
+                    allow: serenity::Permissions::VIEW_CHANNEL
+                        | serenity::Permissions::SEND_MESSAGES,
+                    deny: serenity::Permissions::empty(),
+                    kind: serenity::PermissionOverwriteType::Role(serenity::RoleId(consts::VOTER_ROLE)),
+                },
+            ).await
+        {
+            error!("Failed to edit propose channel permissions. {:?}", e)
+        }
         for m in guild_id
             .members(&ctx, None, None)
             .await
