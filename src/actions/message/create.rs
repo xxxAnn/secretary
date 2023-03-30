@@ -79,7 +79,7 @@ pub async fn create(
             text: message.clone(),
             channel_id: channel.id.0,
             ogmsg: 0,
-            votes: 0,
+            votes: 1,
             already_voted: vec![],
             finished: false,
         }),

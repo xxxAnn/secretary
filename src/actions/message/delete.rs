@@ -88,7 +88,7 @@ pub async fn delete(
             message_id: parsed_id,
             channel_id: channel.id.0,
             ogmsg: 0,
-            votes: 0,
+            votes: 1,
             already_voted: vec![],
             finished: false,
         }),

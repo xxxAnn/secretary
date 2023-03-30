@@ -76,7 +76,7 @@ pub async fn channel_purge(
             format!("Purge 100 messages from the <#{}> channel", &channel.id.0),
             VoteAction::ChannelPurge(ChannelPurge {
                 channel_id: channel.id.0,
-                votes: 0,
+                votes: 1,
                 limit,
                 ogmsg: 0,
                 already_voted: vec![],

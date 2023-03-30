@@ -105,7 +105,7 @@ pub async fn can_view_send(
                 channel_id: channel.id.0,
                 role_id: role.id.0,
                 ogmsg: 0,
-                votes: 0,
+                votes: 1,
                 already_voted: vec![],
                 finished: false,
             }),

@@ -139,7 +139,7 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
         .filter(|m| m.roles.contains(&serenity::RoleId(1069130087116578908)))
         .collect::<Vec<&serenity::Member>>()
         .len() as f32
-        / 3f32)
+        / 2f32)
         .ceil() as i16;
     if let Err(e) = ctx
         .say(format!(
@@ -425,6 +425,7 @@ impl EventHandler for Handler {
                         "Verifying if tally attained required number of votes ({}).",
                         self.d.lock().unwrap().nrq
                     );
+                    info!("{}/{}", tally, self.d.lock().unwrap().nrq);
                     if tally >= self.d.lock().unwrap().nrq {
                         debug!("Dummy Creating dummy to call and throw away.");
                         let dummy = self.d.lock().unwrap().v[index].dummy();
@@ -516,10 +517,10 @@ pub async fn create_vote(
     }
 
     va.already_voted(ctx.author().id.0, true);
-    let tally = va.handle_tally(1);
+    let tally = va.handle_tally(0);
 
     ctx.data().lock().unwrap().v.push(va);
-
+    info!("{}/{}", tally, ctx.data().lock().unwrap().nrq);
     if tally >= ctx.data().lock().unwrap().nrq {
         debug!("Dummy Creating dummy to call and throw away.");
         let dummy = ctx.data().lock().unwrap().v[index].dummy();

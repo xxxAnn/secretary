@@ -78,7 +78,7 @@ pub async fn role_delete(
             format!("Delete role <@&{}>", &role.id.0),
             VoteAction::RoleDelete(RoleDelete {
                 role_id: role.id.0,
-                votes: 0,
+                votes: 1,
                 ogmsg: 0,
                 already_voted: vec![],
                 finished: false,

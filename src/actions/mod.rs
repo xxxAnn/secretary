@@ -80,6 +80,7 @@ impl VoteAction {
     pub fn dummy(&self) -> Self {
         unwrap!(self, m => m.clone().action())
     }
+
     pub async fn call(self, ctx: &crate::serenity::Context) {
         unwrap!(self, m => m.call(ctx.http.clone()).await);
     }

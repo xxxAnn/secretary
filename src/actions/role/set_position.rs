@@ -77,7 +77,7 @@ pub async fn role_set_position(
                 role_id: role.id.0,
                 position,
                 ogmsg: 0,
-                votes: 0,
+                votes: 1,
                 already_voted: vec![],
                 finished: false,
             }),

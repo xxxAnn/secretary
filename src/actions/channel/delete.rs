@@ -68,7 +68,7 @@ pub async fn channel_delete(
             format!("Delete the <#{}> channel", &channel.id.0),
             VoteAction::ChannelDelete(ChannelDelete {
                 channel_id: channel.id.0,
-                votes: 0,
+                votes: 1,
                 ogmsg: 0,
                 already_voted: vec![],
                 finished: false,

@@ -85,7 +85,7 @@ pub async fn role_create(
             colour: u64::from(serenity::Colour::from_rgb(r, g, b).0),
             position,
             ogmsg: 0,
-            votes: 0,
+            votes: 1,
             already_voted: vec![],
             finished: false,
         }),
