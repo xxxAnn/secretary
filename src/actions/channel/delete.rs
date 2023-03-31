@@ -16,7 +16,7 @@
 */
 
 use crate::{
-    consts, create_vote, debug, error, info, serenity, vote_action, Context, Error, Http,
+    consts, create_vote, debug, error, info, active_info, serenity, vote_action, Context, Error, Http,
     VoteAction,
 };
 
@@ -47,7 +47,7 @@ pub async fn channel_delete(
     ctx: Context<'_>,
     #[description = "Channel to delete"] channel: serenity::GuildChannel,
 ) -> Result<(), Error> {
-    info!(
+    active_info!(ctx,
         "Received command by user named {}#{} with user id {}.",
         ctx.author().name,
         ctx.author().discriminator,

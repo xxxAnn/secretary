@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
+use crate::{consts, create_vote, debug, error, info, active_info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct CantView {
@@ -72,7 +72,7 @@ pub async fn cant_view(
     #[description = "Role to block from the channel"] role: serenity::Role,
     #[description = "Channel to block the role from seeing"] channel: serenity::GuildChannel,
 ) -> Result<(), Error> {
-    info!(
+    active_info!(ctx,
         "Received command by user named {}#{} with user id {}.",
         ctx.author().name,
         ctx.author().discriminator,

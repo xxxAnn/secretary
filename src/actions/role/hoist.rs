@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
+use crate::{consts, create_vote, debug, error, info, active_info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct RoleHoist {
@@ -57,7 +57,7 @@ pub async fn role_hoist(
     ctx: Context<'_>,
     #[description = "Role to hoist"] role: serenity::Role,
 ) -> Result<(), Error> {
-    info!(
+    active_info!(ctx,
         "Received command by user named {}#{} with user id {}.",
         ctx.author().name,
         ctx.author().discriminator,
@@ -96,7 +96,7 @@ pub async fn role_unhoist(
     ctx: Context<'_>,
     #[description = "Role to unhoist"] role: serenity::Role,
 ) -> Result<(), Error> {
-    info!(
+    active_info!(ctx,
         "Received command by user named {}#{} with user id {}.",
         ctx.author().name,
         ctx.author().discriminator,

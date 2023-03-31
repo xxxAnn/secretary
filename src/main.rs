@@ -163,9 +163,10 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
                 msg.embed(|e| {
                     e.title(format!("Session {}", consts::SESSION_NUMBER))
                         .description(format!(
-                            "End of Session. 
-                            Session started on {} and lasted {} hour(s). Passed {} motion(s) this session. 
-                            The <#{}> channel was closed. 
+"
+End of Session. 
+Session started on {} and lasted {} hour(s). {} motion(s) were proposed this session. 
+The <#{}> channel was closed. 
                             ",
                             ctx.data()
                                 .lock()
@@ -314,6 +315,18 @@ macro_rules! generate_command {
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
+        let args: Vec<String> =  std::env::args().collect();
+        match args.get(1) {
+            Some(t) => {
+                if t.to_ascii_uppercase() == "UPDATE" {
+                    serenity::ChannelId(consts::INFO_CHANNEL)
+                    .send_message(&ctx, |msg| {
+                        msg.content(&std::fs::read_to_string("UPDATE_LOG").unwrap())
+                    }).await.unwrap();
+                }
+            }
+            _ => {}
+        }
         let guild_id = serenity::GuildId(consts::GUILD_ID);
         if let Err(e) = serenity::ChannelId(consts::PROPOSE_CHANNEL)
             .create_permission(
@@ -392,7 +405,7 @@ impl EventHandler for Handler {
                     0
                 }
             };
-            info!("Received button press for vote index {} by user {}#{} with user id {}. The vote is {} (Y/N).", 
+            active_info!(ctx, "Received button press for vote index {} by user {}#{} with user id {}. The vote is {} (Y/N).", 
             &index, component.user.name, component.user.discriminator, component.user.id.0, t[0]);
             debug!("Received component interaction {:?}.", component);
             let mut p: i16 = 0;
@@ -425,7 +438,7 @@ impl EventHandler for Handler {
                         "Verifying if tally attained required number of votes ({}).",
                         self.d.lock().unwrap().nrq
                     );
-                    info!("{}/{}", tally, self.d.lock().unwrap().nrq);
+                    active_info!(ctx, "{}/{}", tally, self.d.lock().unwrap().nrq);
                     if tally >= self.d.lock().unwrap().nrq {
                         debug!("Dummy Creating dummy to call and throw away.");
                         let dummy = self.d.lock().unwrap().v[index].dummy();
@@ -482,7 +495,7 @@ pub async fn create_vote(
     mut va: VoteAction,
 ) -> Result<(), Error> {
     let index = ctx.data().lock().unwrap().v.len();
-    info!("Adding new vote action at index {}.", &index);
+    active_info!(ctx, "Adding new vote action at index {}.", &index);
     debug!("{:?}", &va);
 
     let vote_chann = serenity::ChannelId(consts::VOTE_CHANNEL);
@@ -520,7 +533,7 @@ pub async fn create_vote(
     let tally = va.handle_tally(0);
 
     ctx.data().lock().unwrap().v.push(va);
-    info!("{}/{}", tally, ctx.data().lock().unwrap().nrq);
+    active_info!(ctx, "{}/{}", tally, ctx.data().lock().unwrap().nrq);
     if tally >= ctx.data().lock().unwrap().nrq {
         debug!("Dummy Creating dummy to call and throw away.");
         let dummy = ctx.data().lock().unwrap().v[index].dummy();
@@ -538,8 +551,19 @@ pub async fn create_vote(
         error!("Failed to reply to vote proposal command. {:?}", e)
     }
 
-    info!("Succesfully created vote proposal with index {}.", &index);
+    active_info!(ctx, "Succesfully created vote proposal with index {}.", &index);
     Ok(())
+}
+
+#[macro_export]
+macro_rules! active_info {
+    ($n:ident, $($e:expr),+) => {
+        serenity::ChannelId(consts::LOG_CHANNEL)
+            .send_message(&$n, |msg| {
+                msg.content(format!("{} [INFO] - {}", chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S"), format!($($e),+)))
+            }).await.unwrap();
+        info!($($e),+);
+    }
 }
 
 #[tokio::main]

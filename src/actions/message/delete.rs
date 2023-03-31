@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, debug, error, info, serenity, Context, Error, Http, VoteAction};
+use crate::{consts, create_vote, debug, error, info, active_info, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct MessageDelete {
@@ -61,7 +61,7 @@ pub async fn delete(
     #[description = "Channel in which the message"] channel: serenity::GuildChannel,
     #[description = "ID of the message to delete"] message_id: String,
 ) -> Result<(), Error> {
-    info!(
+    active_info!(ctx,
         "Received command by user named {}#{} with user id {}.",
         ctx.author().name,
         ctx.author().discriminator,
