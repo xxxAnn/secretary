@@ -1,3 +1,4 @@
-v0.11.1 
+v0.11.2
 Update 0.11: Better Logging
 Patch 1: Better formatting for logging
+Patch 2: Bot sends closing message to #propose + fixed bugs

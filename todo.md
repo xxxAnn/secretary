@@ -3,6 +3,7 @@
 - Channel move (actions/channel/move)
 - User kick (actions/user/kick)
 - User ban (actions/user/ban)
+- User unban (actions/user/unban)
 - User timeout (actions/user/timeout)
 - Remove access to the propose channel when a Session ends.
 - Clearer visual guide to all the commands.

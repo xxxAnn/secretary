@@ -158,6 +158,10 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
     if ctx.author().id == 331431342438875137 {
         let k = chrono::Utc::now() - ctx.data().lock().unwrap().started;
         let l = ctx.data().lock().unwrap().v.len();
+        serenity::ChannelId(consts::PROPOSE_CHANNEL)
+            .send_message(&ctx, |msg| {
+                msg.content("Session ended - channel closed.")
+            }).await.unwrap();
         serenity::ChannelId(consts::VOTE_CHANNEL)
             .send_message(&ctx, |msg| {
                 msg.embed(|e| {
