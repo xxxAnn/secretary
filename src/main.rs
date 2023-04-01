@@ -34,7 +34,6 @@ mod actions;
 mod consts;
 
 use actions::{channel, message, role, user, VoteAction};
-use Language::English;
 use rand::Rng;
 
 #[poise::command(slash_command, subcommands("message", "role", "user", "channel"))]
@@ -62,6 +61,13 @@ fn get_local<'a>(lang: Language, key: &'a str) -> String {
     }
 }
 
+#[macro_export]
+macro_rules! english {
+    ($t:tt) => {
+        get_local(Language::English, stringify!($t))
+    }
+}
+
 #[poise::command(slash_command, rename = "roles")]
 async fn view_roles(ctx: Context<'_>) -> Result<(), Error> {
     let guild = serenity::GuildId(consts::GUILD_ID);
@@ -75,22 +81,22 @@ async fn view_roles(ctx: Context<'_>) -> Result<(), Error> {
                     "{} : {} : {} : {} : {}",
                     r.name,
                     r.id,
-                    if r.hoist { "Hoisted" } else { "Not hoisted" },
-                    format!("Position({})", r.position),
-                    format!("Permissions({})", r.permissions.bits())
+                    if r.hoist { english!(view_roles_0_0) } else { english!(view_roles_0_1) },
+                    format!("{}({})", english!(view_roles_0_2), r.position),
+                    format!("{}({})", english!(view_roles_0_3), r.permissions.bits())
                 )
             })
             .collect::<Vec<String>>()
             .join("\n");
 
         if let Err(e) = ctx.say(m).await {
-            error!("{}", get_local(English, "view_roles_0_error"));
+            error!("{}", english!(view_roles_1));
             Err(Box::new(e))
         } else {
             Ok(())
         }
     } else {
-        error!("{}", get_local(English, "view_roles_0_error"));
+        error!("{}", english!(view_roles_1));
         Ok(()) // <- should be an error
     }
 }
@@ -116,11 +122,11 @@ async fn view_channel_permissions(
     }).collect::<Vec<String>>().join("\n");
 
     if text == "" {
-        text = "No specific channel permissions.".to_owned();
+        text = english!(view_channel_permissions_0).to_owned();
     }
 
     if let Err(e) = ctx.say(text).await {
-        error!("{}", get_local(English, "view_channel_permissions_0"));
+        error!("{}", english!(view_channel_permissions_1));
         Err(Box::new(e))
     } else {
         Ok(())
@@ -143,12 +149,13 @@ async fn sync(ctx: Context<'_>) -> Result<(), Error> {
         .ceil() as i16;
     if let Err(e) = ctx
         .say(format!(
-            "Synced. The number of votes required is now {}.",
+            "{} {}.",
+            english!(sync_0),
             ctx.data().lock().unwrap().nrq
         ))
         .await
     {
-        error!("Error responding to sync. {:?}", e);
+        error!("{} {:?}", english!(sync_1), e);
     }
     Ok(())
 }
@@ -160,7 +167,7 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
         let l = ctx.data().lock().unwrap().v.len();
         serenity::ChannelId(consts::PROPOSE_CHANNEL)
             .send_message(&ctx, |msg| {
-                msg.content("Session ended - channel closed.")
+                msg.content(english!(declare_session_end_0))
             }).await.unwrap();
         serenity::ChannelId(consts::VOTE_CHANNEL)
             .send_message(&ctx, |msg| {
@@ -168,18 +175,25 @@ async fn declare_session_end(ctx: Context<'_>) -> Result<(), Error> {
                     e.title(format!("Session {}", consts::SESSION_NUMBER))
                         .description(format!(
 "
-End of Session. 
-Session started on {} and lasted {} hour(s). {} motion(s) were proposed this session. 
-The <#{}> channel was closed. 
+{} 
+{} {} {} {} {} {} {}
+{}{}{}
                             ",
+                            english!(declare_session_end_1_0),
+                            english!(declare_session_end_1_1),
                             ctx.data()
                                 .lock()
                                 .unwrap()
                                 .started
                                 .format("%Y-%m-%d at %H:%M:%S UTC+0"),
+                            english!(declare_session_end_1_2),
                             k.num_hours(),
+                            english!(declare_session_end_1_3),
                             l,
-                            consts::PROPOSE_CHANNEL
+                            english!(declare_session_end_1_4),
+                            english!(declare_session_end_1_5),
+                            consts::PROPOSE_CHANNEL,
+                            english!(declare_session_end_1_6)
                         ))
                         .color(ctx.data().lock().unwrap().color)
                 })
@@ -201,18 +215,19 @@ The <#{}> channel was closed.
             .await
         {
             error!(
-                "Error giving permissions to Assistant General Secretary. {:?}",
+                "{} {:?}",
+                english!(declare_session_end_2),
                 &e
             );
         }
         if let Err(e) = ctx
             .send(|r| {
-                r.content("Succesfully ended session. Shutting down bot.".to_string())
+                r.content(english!(declare_session_end_3))
                     .ephemeral(true)
             })
             .await
         {
-            error!("Error responding to end of session declaration. {:?}", &e);
+            error!("{} {:?}", english!(declare_session_end_4), &e);
             Err(Box::new(e))
         } else {
             let contents = std::fs::read_to_string("src/consts.rs").unwrap();
@@ -241,18 +256,18 @@ The <#{}> channel was closed.
                     },
                 ).await
             {
-                error!("Failed to edit propose channel permissions. {:?}", e)
+                error!("{} {:?}", english!(declare_session_end_5), e)
             }
             std::process::abort();
         }
     } else if let Err(e) = ctx
         .send(|r| {
-            r.content("You are not allowed to declare the end of a session.".to_string())
+            r.content(english!(declare_session_end_6))
                 .ephemeral(true)
         })
         .await
     {
-        error!("Error responding to end of session declaration. {:?}", &e);
+        error!("{} {:?}", english!(declare_session_end_4), &e);
         Err(Box::new(e))
     } else {
         Ok(())
@@ -319,6 +334,9 @@ macro_rules! generate_command {
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: serenity::Context, _: serenity::Ready) {
+        serenity::ChannelId(consts::PROPOSE_CHANNEL)
+            .send_message(&ctx, |msg| { 
+                msg.content("Session started - channel opened") }).await.unwrap();
         let args: Vec<String> =  std::env::args().collect();
         match args.get(1) {
             Some(t) => {
@@ -343,7 +361,7 @@ impl EventHandler for Handler {
                 },
             ).await
         {
-            error!("Failed to edit propose channel permissions. {:?}", e)
+            error!("{} {:?}", english!(ready_0), e);
         }
         for m in guild_id
             .members(&ctx, None, None)
@@ -363,8 +381,8 @@ impl EventHandler for Handler {
             .await
         {
             error!(
-                "Error giving permissions to Assistant General Secretary. {:?}",
-                &e
+                "{} {:?}",
+                english!(ready_1), &e
             );
         }
         serenity::ChannelId(consts::VOTE_CHANNEL)
@@ -372,9 +390,11 @@ impl EventHandler for Handler {
                 msg.embed(|e| {
                     e.title(format!("Session {}", consts::SESSION_NUMBER))
                         .description(format!(
-                            "The Secretary restarted. Hence, all prior votes were rendered invalid.
-            
-            _ _    Beginning of Session. ({})",
+                            "{}
+
+_ _    {} ({})",
+                            english!(ready_2_0),
+                            english!(ready_2_1),
                             self.d
                                 .lock()
                                 .unwrap()
@@ -398,7 +418,7 @@ impl EventHandler for Handler {
                 Ok(i) => i,
                 Err(e) => {
                     error!(
-                        "Failed to parse index, invalid component id ({}). {:?}",
+                        "{} ({}). {:?}", english!(interaction_create_0),
                         component.data.custom_id, e
                     );
                     // defaulting to 0 is probably the best thing to do since 0 is likely
@@ -409,8 +429,6 @@ impl EventHandler for Handler {
                     0
                 }
             };
-            active_info!(ctx, "Received button press for vote index {} by user {}#{} with user id {}. The vote is {} (Y/N).", 
-            &index, component.user.name, component.user.discriminator, component.user.id.0, t[0]);
             debug!("Received component interaction {:?}.", component);
             let mut p: i16 = 0;
             let r = component.user.id.0;
@@ -442,7 +460,6 @@ impl EventHandler for Handler {
                         "Verifying if tally attained required number of votes ({}).",
                         self.d.lock().unwrap().nrq
                     );
-                    active_info!(ctx, "{}/{}", tally, self.d.lock().unwrap().nrq);
                     if tally >= self.d.lock().unwrap().nrq {
                         debug!("Dummy Creating dummy to call and throw away.");
                         let dummy = self.d.lock().unwrap().v[index].dummy();
@@ -456,7 +473,8 @@ impl EventHandler for Handler {
                         .create_interaction_response(&ctx, |resp| {
                             resp.interaction_response_data(|dat| {
                                 dat.content(format!(
-                                    "Succesfully voted. {}/{}",
+                                    "{} {}/{}",
+                                    english!(interaction_create_1),
                                     tally,
                                     self.d.lock().unwrap().nrq
                                 ))
@@ -465,7 +483,7 @@ impl EventHandler for Handler {
                         })
                         .await
                     {
-                        error!("Failed to reply to interaction. {:?}", e)
+                        error!("{} {:?}", english!(interaction_create_2), e)
                     }
                 } else if let Err(e) = component
                     .create_interaction_response(&ctx, |resp| {
@@ -476,7 +494,7 @@ impl EventHandler for Handler {
                     })
                     .await
                 {
-                    error!("Failed to reply to interaction. {:?}", e)
+                    error!("{} {:?}", english!(interaction_create_2), e)
                 }
             }
         }
@@ -537,7 +555,6 @@ pub async fn create_vote(
     let tally = va.handle_tally(0);
 
     ctx.data().lock().unwrap().v.push(va);
-    active_info!(ctx, "{}/{}", tally, ctx.data().lock().unwrap().nrq);
     if tally >= ctx.data().lock().unwrap().nrq {
         debug!("Dummy Creating dummy to call and throw away.");
         let dummy = ctx.data().lock().unwrap().v[index].dummy();
@@ -549,13 +566,12 @@ pub async fn create_vote(
     }
 
     if let Err(e) = ctx
-        .send(|f| f.content("Succesfully created proposal").ephemeral(true))
+        .send(|f| f.content("Succesfully created proposal and voted for it").ephemeral(true))
         .await
     {
         error!("Failed to reply to vote proposal command. {:?}", e)
     }
 
-    active_info!(ctx, "Succesfully created vote proposal with index {}.", &index);
     Ok(())
 }
 

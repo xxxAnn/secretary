@@ -15,17 +15,17 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{
-    consts, create_vote, debug, error, info, active_info, serenity, vote_action, Context, Error, Http,
-    VoteAction,
-};
+use crate::{consts, create_vote, vote_action, debug, error, serenity, Context, Error, Http, VoteAction};
 
 vote_action!(
-    ChannelDelete,
-    move |me: ChannelDelete, http: std::sync::Arc<Http>| {
+    RoleRename,
+    move |me: RoleRename, http: std::sync::Arc<Http>| {
         async move {
-            if let Err(e) = http.as_ref().delete_channel(me.channel_id).await {
-                error!("Failed to delete channel. {:?}", e)
+            if let Err(e) = serenity::GuildId(me.role_id)
+            .edit_role(&http, me.role_id, |e| {
+                e.name(me.new_name)
+            }).await {
+                error!("Failed to rename role. {:?}", e)
             } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
                 .send_message(&http, |msg| {
                     msg.content("Vote passed.").reference_message((
@@ -39,35 +39,29 @@ vote_action!(
             }
         }
     },
-    channel_id: u64
+    role_id: u64,
+    new_name: String
 );
 
-#[poise::command(slash_command, rename = "delete")]
-pub async fn channel_delete(
+#[poise::command(slash_command, rename = "rename")]
+pub async fn role_rename(
     ctx: Context<'_>,
-    #[description = "Channel to delete"] channel: serenity::Channel,
+    #[description = "Role to rename"] role: serenity::Role,
+    #[description = "New name"] new_name: String
 ) -> Result<(), Error> {
-    active_info!(ctx,
-        "Received command by user named {}#{} with user id {}.",
-        ctx.author().name,
-        ctx.author().discriminator,
-        ctx.author().id.0
-    );
     debug!("Received context object {:?}.", &ctx);
-    if Vec::from(consts::CANNOT_MODIFY_CHANNEL).contains(&channel.id().0) {
+    if Vec::from(consts::CANNOT_MODIFY).contains(&role.id.0) {
         let _ = ctx
-            .send(|m| {
-                m.content("You cannot delete these channels.")
-                    .ephemeral(true)
-            })
+            .send(|m| m.content("You cannot rename this role.").ephemeral(true))
             .await;
         Ok(())
     } else {
         create_vote(
             &ctx,
-            format!("Delete the <#{}> channel", &channel.id().0),
-            VoteAction::ChannelDelete(ChannelDelete {
-                channel_id: channel.id().0,
+            format!("Rename role <@&{}> to {}", &role.id.0, new_name),
+            VoteAction::RoleRename(RoleRename {
+                role_id: role.id.0,
+                new_name,
                 votes: 1,
                 ogmsg: 0,
                 already_voted: vec![],

@@ -20,12 +20,14 @@ mod delete;
 mod purge;
 mod textcreate;
 mod voicecreate;
+mod rename;
 
 pub use categorycreate::*;
 pub use delete::*;
 pub use purge::*;
 pub use textcreate::*;
 pub use voicecreate::*;
+pub use rename::*;
 
 use crate::{Context, Error};
 
@@ -36,7 +38,8 @@ use crate::{Context, Error};
         "create_voice",
         "channel_delete",
         "create_category",
-        "channel_purge"
+        "channel_purge",
+        "channel_rename"
     )
 )]
 pub async fn channel(_: Context<'_>) -> Result<(), Error> {

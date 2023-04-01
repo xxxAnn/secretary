@@ -67,5 +67,14 @@ Usage: /propose role set_position \<role\> \<position\>
 ## (actions/user/role/add) Add a role to someone
 Usage: /propose user role_add \<member\> \<role\>
 
+## (actions/channel/rename) Renames a channel
+Usage: /propose channel rename \<channel\> \<new name\>
+
+## (actions/role/rename) Renames a role
+Usage: /propose role rename \<role\> \<new name\>
+
 ## (actions/user/role/remove) Remove a role from someone
 Usage: /propose user role_remove \<member\> \<role\>
+
+## (action/user/remove) Kicks a user from the server
+Usage: /propose user kick \<member\>

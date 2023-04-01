@@ -15,7 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::{consts, create_vote, debug, error, info, active_info, serenity, Context, Error, Http, VoteAction};
+use crate::{consts, create_vote, debug, error, serenity, Context, Error, Http, VoteAction};
 
 #[derive(Debug, Clone)]
 pub struct RoleDelete {
@@ -60,12 +60,6 @@ pub async fn role_delete(
     ctx: Context<'_>,
     #[description = "Role to delete"] role: serenity::Role,
 ) -> Result<(), Error> {
-    active_info!(ctx,
-        "Received command by user named {}#{} with user id {}.",
-        ctx.author().name,
-        ctx.author().discriminator,
-        ctx.author().id.0
-    );
     debug!("Received context object {:?}.", &ctx);
     if Vec::from(consts::CANNOT_MODIFY).contains(&role.id.0) {
         let _ = ctx

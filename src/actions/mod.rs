@@ -59,7 +59,9 @@ generate_vote_actions!(
     ChannelPurge,
     RoleSetPosition,
     RoleHoist,
-    UserKick
+    UserKick,
+    GuildChannelRename,
+    RoleRename
 );
 
 /*

@@ -22,6 +22,7 @@ pub mod create;
 pub mod delete;
 pub mod hoist;
 pub mod set_position;
+pub mod rename;
 
 pub use can_view_send::*;
 pub use cant_send::*;
@@ -30,6 +31,7 @@ pub use create::*;
 pub use delete::*;
 pub use hoist::*;
 pub use set_position::*;
+pub use rename::*;
 
 use crate::{Context, Error};
 
@@ -43,7 +45,8 @@ use crate::{Context, Error};
         "cant_view",
         "role_set_position",
         "role_hoist",
-        "role_unhoist"
+        "role_unhoist",
+        "role_rename"
     )
 )]
 pub async fn role(_: Context<'_>) -> Result<(), Error> {

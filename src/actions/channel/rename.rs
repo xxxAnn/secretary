@@ -16,16 +16,19 @@
 */
 
 use crate::{
-    consts, create_vote, debug, error, info, active_info, serenity, vote_action, Context, Error, Http,
+    consts, create_vote, error, generate_command, serenity, vote_action, Context, Error, Http,
     VoteAction,
 };
 
 vote_action!(
-    ChannelDelete,
-    move |me: ChannelDelete, http: std::sync::Arc<Http>| {
+    GuildChannelRename,
+    move |me: GuildChannelRename, http: std::sync::Arc<Http>| {
         async move {
-            if let Err(e) = http.as_ref().delete_channel(me.channel_id).await {
-                error!("Failed to delete channel. {:?}", e)
+            if let Err(e) = serenity::ChannelId(me.channel_id)
+            .edit(&http, |e| {
+                e.name(me.new_name)
+            }).await {
+                error!("Failed to rename channel. {:?}", e)
             } else if let Err(e) = serenity::ChannelId(consts::VOTE_CHANNEL)
                 .send_message(&http, |msg| {
                     msg.content("Vote passed.").reference_message((
@@ -39,41 +42,29 @@ vote_action!(
             }
         }
     },
-    channel_id: u64
+    channel_id: u64,
+    new_name: String
 );
 
-#[poise::command(slash_command, rename = "delete")]
-pub async fn channel_delete(
+#[poise::command(slash_command, rename = "rename")]
+pub async fn channel_rename(
     ctx: Context<'_>,
-    #[description = "Channel to delete"] channel: serenity::Channel,
+    #[description = "Channel to rename"] channel: serenity::Channel,
+    #[description = "New name for the channel"] new_name: String
 ) -> Result<(), Error> {
-    active_info!(ctx,
-        "Received command by user named {}#{} with user id {}.",
-        ctx.author().name,
-        ctx.author().discriminator,
-        ctx.author().id.0
-    );
-    debug!("Received context object {:?}.", &ctx);
     if Vec::from(consts::CANNOT_MODIFY_CHANNEL).contains(&channel.id().0) {
         let _ = ctx
             .send(|m| {
-                m.content("You cannot delete these channels.")
+                m.content("You cannot modify these channels.")
                     .ephemeral(true)
             })
             .await;
         Ok(())
-    } else {
+    } else { 
         create_vote(
-            &ctx,
-            format!("Delete the <#{}> channel", &channel.id().0),
-            VoteAction::ChannelDelete(ChannelDelete {
-                channel_id: channel.id().0,
-                votes: 1,
-                ogmsg: 0,
-                already_voted: vec![],
-                finished: false,
-            }),
-        )
-        .await
-    }
+        &ctx,
+        format!("Rename channel <#{}> to {}", channel.id().0, new_name),
+        GuildChannelRename::new(channel.id().0, new_name).action(),
+        ).await
+    }      
 }
