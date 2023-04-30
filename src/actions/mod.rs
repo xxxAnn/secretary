@@ -61,7 +61,8 @@ generate_vote_actions!(
     RoleHoist,
     UserKick,
     GuildChannelRename,
-    RoleRename
+    RoleRename,
+    UserCanPing
 );
 
 /*

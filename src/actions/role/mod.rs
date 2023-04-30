@@ -23,6 +23,7 @@ pub mod delete;
 pub mod hoist;
 pub mod set_position;
 pub mod rename;
+pub mod can_ping;
 
 pub use can_view_send::*;
 pub use cant_send::*;
@@ -32,6 +33,7 @@ pub use delete::*;
 pub use hoist::*;
 pub use set_position::*;
 pub use rename::*;
+pub use can_ping::*;
 
 use crate::{Context, Error};
 
@@ -46,7 +48,9 @@ use crate::{Context, Error};
         "role_set_position",
         "role_hoist",
         "role_unhoist",
-        "role_rename"
+        "role_rename",
+        "can_ping_everyone",
+        "cant_ping_everyone"
     )
 )]
 pub async fn role(_: Context<'_>) -> Result<(), Error> {
